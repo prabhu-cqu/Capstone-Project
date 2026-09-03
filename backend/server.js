@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const pool = require("./config/db");
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -16,6 +18,26 @@ app.get("/api/health", (req, res) => {
     message: "SmartShop AI backend is running",
     timestamp: new Date().toISOString()
   });
+});
+
+// Database connection test
+app.get("/api/health/db", async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT 1 AS database_connection");
+
+    res.status(200).json({
+      success: true,
+      message: "SmartShop AI database connection is working",
+      result: rows[0]
+    });
+  } catch (error) {
+    console.error("Database connection error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Database connection failed"
+    });
+  }
 });
 
 // Start server
