@@ -12,7 +12,12 @@ const initialFilters = {
   sortOption: "name-ascending",
 };
 
-function ProductCataloguePage({ onViewDetails }) {
+function ProductCataloguePage({
+  onViewDetails,
+  onAddToCart,
+  cartItemCount,
+  onOpenCart,
+}) {
   const [filters, setFilters] = useState(initialFilters);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +148,13 @@ function ProductCataloguePage({ onViewDetails }) {
         <p className="catalogue-header__eyebrow">SmartShop AI</p>
 
         <h1>Product catalogue</h1>
+        <button
+          type="button"
+          className="catalogue-cart-button"
+          onClick={onOpenCart}
+        >
+          🛒 Cart ({cartItemCount})
+        </button>
 
         <p>
           Search and compare computer, mobile and study accessories using
@@ -188,6 +200,7 @@ function ProductCataloguePage({ onViewDetails }) {
             <ProductGrid
               products={filteredProducts}
               onViewDetails={onViewDetails}
+              onAddToCart={onAddToCart}
             />
           </section>
         </div>

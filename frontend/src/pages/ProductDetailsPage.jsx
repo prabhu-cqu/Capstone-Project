@@ -1,4 +1,4 @@
-function ProductDetailsPage({ product, onBack }) {
+function ProductDetailsPage({ product, onBack, onAddToCart }) {
   if (!product) {
     return (
       <main className="product-details-page">
@@ -40,6 +40,13 @@ function ProductDetailsPage({ product, onBack }) {
       >
         ← Back to catalogue
       </button>
+      <button
+  type="button"
+  onClick={() => onAddToCart(product)}
+  disabled={Number(product.stock) <= 0}
+>
+  {Number(product.stock) > 0 ? "Add to Cart" : "Out of Stock"}
+</button>
 
       <article className="product-details">
         <div className="product-details__image-container">

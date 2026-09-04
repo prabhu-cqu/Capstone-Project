@@ -1,4 +1,4 @@
-function ProductCard({ product, onViewDetails }) {
+function ProductCard({ product, onViewDetails, onAddToCart }) {
   const isInStock = Number(product.stock) > 0;
 
   const formattedPrice = Number(product.price).toLocaleString("en-AU", {
@@ -54,6 +54,13 @@ function ProductCard({ product, onViewDetails }) {
           aria-label={`View details for ${product.name}`}
         >
           View details
+        </button>
+        <button
+          type="button"
+          onClick={() => onAddToCart(product)}
+          disabled={Number(product.stock) <= 0}
+        >
+          {Number(product.stock) > 0 ? "Add to Cart" : "Out of Stock"}
         </button>
       </div>
     </article>
