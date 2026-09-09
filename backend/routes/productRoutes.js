@@ -347,6 +347,180 @@ router.post("/", async (req, res) => {
   }
 });
 
+// PUT /api/products/:productId
+// Update an existing product
+router.put("/:productId", async (req, res) => {
+  try {
+    const productId = Number.parseInt(req.params.productId, 10);
+
+    if (!Number.isInteger(productId) || productId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID must be a positive integer"
+      });
+    }
+
+    const {
+      name,
+      description,
+      price,
+      stock,
+      category_id,
+      specifications,
+      status
+    } = req.body;
+
+    if (!name || price === undefined || stock === undefined || category_id === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "name, price, stock, and category_id are required"
+      });
+    }
+
+    if (typeof name !== "string" || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name must be a non-empty string"
+      });
+    }
+
+    const productPrice = Number(price);
+
+    if (!Number.isFinite(productPrice) || productPrice < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a valid non-negative number"
+      });
+    }
+
+    const productStock = Number(stock);
+
+    if (!Number.isInteger(productStock) || productStock < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock must be a non-negative integer"
+      });
+    }
+
+    const categoryId = Number.parseInt(category_id, 10);
+
+    if (!Number.isInteger(categoryId) || categoryId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "category_id must be a positive integer"
+      });
+    }
+
+    const [existingProducts] = await pool.query(
+      "SELECT product_id FROM products WHERE product_id = ? LIMIT 1",
+      [productId]
+    );
+
+    if (existingProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    const [categories] = await pool.query(
+      "SELECT category_id FROM categories WHERE category_id = ? LIMIT 1",
+      [categoryId]
+    );
+
+    if (categories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    let productSpecifications = specifications || {};
+
+    if (
+      typeof productSpecifications !== "object" ||
+      Array.isArray(productSpecifications) ||
+      productSpecifications === null
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Specifications must be a JSON object"
+      });
+    }
+
+    const validStatuses = ["active", "inactive"];
+
+    if (status !== undefined && !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Status must be either active or inactive"
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE products
+      SET
+        name = ?,
+        description = ?,
+        price = ?,
+        stock = ?,
+        category_id = ?,
+        specifications = ?,
+        status = COALESCE(?, status),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE product_id = ?
+      `,
+      [
+        name.trim(),
+        description || null,
+        productPrice,
+        productStock,
+        categoryId,
+        JSON.stringify(productSpecifications),
+        status || null,
+        productId
+      ]
+    );
+
+    const [products] = await pool.query(
+      `
+      SELECT
+        p.product_id,
+        p.name,
+        p.description,
+        p.price,
+        p.stock,
+        p.specifications,
+        p.status,
+        p.created_at,
+        p.updated_at,
+        c.category_id,
+        c.name AS category_name
+      FROM products p
+      INNER JOIN categories c
+        ON p.category_id = c.category_id
+      WHERE p.product_id = ?
+      LIMIT 1
+      `,
+      [productId]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: products[0]
+    });
+  } catch (error) {
+    console.error("Error updating product:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update product"
+    });
+  }
+});
+
 // GET /api/products/:productId
 // Retrieve one active product by ID
 router.get("/:productId", async (req, res) => {
