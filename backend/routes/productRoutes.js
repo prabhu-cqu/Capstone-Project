@@ -520,6 +520,50 @@ router.put("/:productId", async (req, res) => {
     });
   }
 });
+// DELETE /api/products/:productId
+// Delete an existing product
+router.delete("/:productId", async (req, res) => {
+  try {
+    const productId = Number.parseInt(req.params.productId, 10);
+
+    if (!Number.isInteger(productId) || productId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID must be a positive integer"
+      });
+    }
+
+    const [existingProducts] = await pool.query(
+      "SELECT product_id FROM products WHERE product_id = ? LIMIT 1",
+      [productId]
+    );
+
+    if (existingProducts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    await pool.query(
+      "DELETE FROM products WHERE product_id = ?",
+      [productId]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Product deleted successfully",
+      product_id: productId
+    });
+  } catch (error) {
+    console.error("Error deleting product:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete product"
+    });
+  }
+});
 
 // GET /api/products/:productId
 // Retrieve one active product by ID
