@@ -196,6 +196,157 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// POST /api/products
+// Create a new product
+router.post("/", async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      price,
+      stock,
+      category_id,
+      specifications
+    } = req.body;
+
+    // Validate required fields
+    if (
+      !name ||
+      price === undefined ||
+      stock === undefined ||
+      category_id === undefined
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "name, price, stock, and category_id are required"
+      });
+    }
+
+    // Validate product name
+    if (typeof name !== "string" || name.trim().length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Product name must be a non-empty string"
+      });
+    }
+
+    // Validate price
+    const productPrice = Number(price);
+
+    if (!Number.isFinite(productPrice) || productPrice < 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Price must be a valid non-negative number"
+      });
+    }
+
+    // Validate stock
+    const productStock = Number(stock);
+
+    if (
+      !Number.isInteger(productStock) ||
+      productStock < 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Stock must be a non-negative integer"
+      });
+    }
+
+    // Validate category ID
+    const categoryId = Number.parseInt(category_id, 10);
+
+    if (!Number.isInteger(categoryId) || categoryId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "category_id must be a positive integer"
+      });
+    }
+
+    // Check that the category exists
+    const [categories] = await pool.query(
+      "SELECT category_id FROM categories WHERE category_id = ? LIMIT 1",
+      [categoryId]
+    );
+
+    if (categories.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    // Convert specifications to JSON
+    let productSpecifications = specifications || {};
+
+    if (
+      typeof productSpecifications !== "object" ||
+      Array.isArray(productSpecifications) ||
+      productSpecifications === null
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Specifications must be a JSON object"
+      });
+    }
+
+    // Insert the new product
+    const [result] = await pool.query(
+      `
+      INSERT INTO products
+        (name, description, price, stock, category_id, specifications, status)
+      VALUES (?, ?, ?, ?, ?, ?, 'active')
+      `,
+      [
+        name.trim(),
+        description || null,
+        productPrice,
+        productStock,
+        categoryId,
+        JSON.stringify(productSpecifications)
+      ]
+    );
+
+    // Retrieve the newly created product
+    const [products] = await pool.query(
+      `
+      SELECT
+        p.product_id,
+        p.name,
+        p.description,
+        p.price,
+        p.stock,
+        p.specifications,
+        p.status,
+        p.created_at,
+        p.updated_at,
+        c.category_id,
+        c.name AS category_name
+      FROM products p
+      INNER JOIN categories c
+        ON p.category_id = c.category_id
+      WHERE p.product_id = ?
+      LIMIT 1
+      `,
+      [result.insertId]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      data: products[0]
+    });
+  } catch (error) {
+    console.error("Error creating product:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to create product"
+    });
+  }
+});
+
 // GET /api/products/:productId
 // Retrieve one active product by ID
 router.get("/:productId", async (req, res) => {
