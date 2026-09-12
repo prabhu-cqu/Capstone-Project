@@ -2,6 +2,10 @@ const express = require("express");
 const pool = require("../config/db");
 
 const router = express.Router();
+const {
+  authenticateToken,
+  requireAdmin
+} = require("../middleware/authMiddleware");
 
 // GET /api/products
 // Retrieve active products with optional filtering and sorting
@@ -198,7 +202,11 @@ router.get("/search", async (req, res) => {
 
 // POST /api/products
 // Create a new product
-router.post("/", async (req, res) => {
+router.post(
+  "/",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
   try {
     const {
       name,
@@ -349,7 +357,11 @@ router.post("/", async (req, res) => {
 
 // PUT /api/products/:productId
 // Update an existing product
-router.put("/:productId", async (req, res) => {
+router.put(
+  "/:productId",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
   try {
     const productId = Number.parseInt(req.params.productId, 10);
 
@@ -522,7 +534,11 @@ router.put("/:productId", async (req, res) => {
 });
 // DELETE /api/products/:productId
 // Delete an existing product
-router.delete("/:productId", async (req, res) => {
+router.delete(
+  "/:productId",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
   try {
     const productId = Number.parseInt(req.params.productId, 10);
 
