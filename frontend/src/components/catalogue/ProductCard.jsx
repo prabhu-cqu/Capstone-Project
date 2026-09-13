@@ -57,8 +57,10 @@ function ProductCard({ product, onViewDetails, onAddToCart }) {
         </button>
         <button
           type="button"
+          className="product-card__button product-card__button--cart"
           onClick={() => onAddToCart(product)}
-          disabled={Number(product.stock) <= 0}
+          disabled={!isInStock}
+          aria-label={`Add ${product.name} to cart`}
         >
           {Number(product.stock) > 0 ? "Add to Cart" : "Out of Stock"}
         </button>

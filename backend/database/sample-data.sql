@@ -107,3 +107,26 @@ AND NOT EXISTS (
     SELECT 1 FROM products
     WHERE name = 'JBL Portable Speaker'
 );
+
+-- Add product images
+UPDATE products
+SET image_url = CASE name
+  WHEN 'Lenovo IdeaPad 5' THEN
+    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80'
+  WHEN 'Logitech Wireless Mouse' THEN
+    'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=900&q=80'
+  WHEN 'USB-C Laptop Hub' THEN
+    'https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=80'
+  WHEN 'Sony Wireless Headphones' THEN
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80'
+  WHEN 'JBL Portable Speaker' THEN
+    'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80'
+  ELSE image_url
+END
+WHERE name IN (
+  'Lenovo IdeaPad 5',
+  'Logitech Wireless Mouse',
+  'USB-C Laptop Hub',
+  'Sony Wireless Headphones',
+  'JBL Portable Speaker'
+);
