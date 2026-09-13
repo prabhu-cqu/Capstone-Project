@@ -1,8 +1,15 @@
 import "./CartPanel.css";
 
-function CartPanel({ cartItems, onClose, onUpdateQuantity, onRemoveItem }) {
+function CartPanel({
+  cartItems,
+  loading,
+  error,
+  onClose,
+  onUpdateQuantity,
+  onRemoveItem,
+}) {
   const subtotal = cartItems.reduce(
-    (total, item) => total + Number(item.price) * item.quantity,
+    (total, item) => total + Number(item.price) * Number(item.quantity),
     0
   );
 
@@ -10,10 +17,13 @@ function CartPanel({ cartItems, onClose, onUpdateQuantity, onRemoveItem }) {
     <div className="cart-overlay" onClick={onClose}>
       <aside
         className="cart-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-title"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="cart-header">
-          <h2>Your Cart</h2>
+          <h2 id="cart-title">Your Cart</h2>
 
           <button
             type="button"
@@ -25,81 +35,116 @@ function CartPanel({ cartItems, onClose, onUpdateQuantity, onRemoveItem }) {
           </button>
         </div>
 
-        {cartItems.length === 0 ? (
+        {error && (
+          <p className="cart-api-message cart-api-message--error" role="alert">
+            {error}
+          </p>
+        )}
+
+        {loading && (
+          <p className="cart-api-message" role="status">
+            Updating your cart...
+          </p>
+        )}
+
+        {!loading && cartItems.length === 0 ? (
           <div className="cart-empty">
             <h3>Your cart is empty</h3>
             <p>Add a product from the catalogue to get started.</p>
           </div>
         ) : (
-          <>
-            <div className="cart-items">
-              {cartItems.map((item) => (
-                <div className="cart-item" key={item.product_id}>
-                  <div className="cart-item-image">
-                    {item.imageUrl ? (
-                      <img src={item.imageUrl} alt={item.name} />
-                    ) : (
-                      <span>Product</span>
-                    )}
-                  </div>
+          cartItems.length > 0 && (
+            <>
+              <div className="cart-items">
+                {cartItems.map((item) => (
+                  <div className="cart-item" key={item.product_id}>
+                    <div className="cart-item-image">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} />
+                      ) : (
+                        <span>Product</span>
+                      )}
+                    </div>
 
-                  <div className="cart-item-details">
-                    <h3>{item.name}</h3>
-                    <p>${Number(item.price).toFixed(2)}</p>
+                    <div className="cart-item-details">
+                      <h3>{item.name}</h3>
+                      <p>${Number(item.price).toFixed(2)}</p>
 
-                    <div className="cart-quantity-controls">
+                      <div className="cart-quantity-controls">
+                        <button
+                          type="button"
+                          disabled={loading}
+                          aria-label={`Decrease ${item.name} quantity`}
+                          onClick={() =>
+                            onUpdateQuantity(
+                              item.product_id,
+                              Number(item.quantity) - 1
+                            )
+                          }
+                        >
+                          −
+                        </button>
+
+                        <span>{item.quantity}</span>
+
+                        <button
+                          type="button"
+                          disabled={
+                            loading ||
+                            Number(item.quantity) >= Number(item.stock)
+                          }
+                          aria-label={`Increase ${item.name} quantity`}
+                          onClick={() =>
+                            onUpdateQuantity(
+                              item.product_id,
+                              Number(item.quantity) + 1
+                            )
+                          }
+                        >
+                          +
+                        </button>
+                      </div>
+
                       <button
                         type="button"
-                        onClick={() =>
-                          onUpdateQuantity(item.product_id, item.quantity - 1)
-                        }
+                        className="cart-remove-button"
+                        disabled={loading}
+                        onClick={() => onRemoveItem(item.product_id)}
                       >
-                        −
-                      </button>
-
-                      <span>{item.quantity}</span>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          onUpdateQuantity(item.product_id, item.quantity + 1)
-                        }
-                      >
-                        +
+                        Remove
                       </button>
                     </div>
 
-                    <button
-                      type="button"
-                      className="cart-remove-button"
-                      onClick={() => onRemoveItem(item.product_id)}
-                    >
-                      Remove
-                    </button>
+                    <strong>
+                      $
+                      {(
+                        Number(item.price) * Number(item.quantity)
+                      ).toFixed(2)}
+                    </strong>
                   </div>
-
-                  <strong>
-                    ${(Number(item.price) * item.quantity).toFixed(2)}
-                  </strong>
-                </div>
-              ))}
-            </div>
-
-            <div className="cart-summary">
-              <div className="cart-summary-row">
-                <span>Subtotal</span>
-                <strong>${subtotal.toFixed(2)}</strong>
+                ))}
               </div>
 
-              <p className="cart-summary-note">
-                Checkout will be added in the next development stage.
-              </p>
+              <div className="cart-summary">
+                <div className="cart-summary-row">
+                  <span>Subtotal</span>
+                  <strong>${subtotal.toFixed(2)}</strong>
+                </div>
 
-              <button type="button" className="cart-checkout-button" disabled>
-                Proceed to Checkout
-              </button>
-            </div>
-          </>
+                <p className="cart-summary-note">
+                  Checkout will be added in the next development stage.
+                </p>
+
+                <button
+                  type="button"
+                  className="cart-checkout-button"
+                  disabled
+                >
+                  Proceed to Checkout
+                </button>
+              </div>
+            </>
+          )
         )}
       </aside>
     </div>

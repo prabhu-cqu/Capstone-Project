@@ -136,3 +136,25 @@
   color: #666666;
   cursor: not-allowed;
 }
+
+.cart-api-message {
+  padding: 0.8rem 1rem;
+  margin: 0 0 1rem;
+  color: #1e3a8a;
+  font-weight: 700;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+}
+
+.cart-api-message--error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.cart-quantity-controls button:disabled,
+.cart-remove-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}

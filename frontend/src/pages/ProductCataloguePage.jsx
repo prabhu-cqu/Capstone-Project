@@ -17,6 +17,9 @@ function ProductCataloguePage({
   onAddToCart,
   cartItemCount,
   onOpenCart,
+  currentUser,
+  onOpenAuth,
+  onLogout,
 }) {
   const [filters, setFilters] = useState(initialFilters);
   const [products, setProducts] = useState([]);
@@ -148,13 +151,38 @@ function ProductCataloguePage({
         <p className="catalogue-header__eyebrow">SmartShop AI</p>
 
         <h1>Product catalogue</h1>
-        <button
-          type="button"
-          className="catalogue-cart-button"
-          onClick={onOpenCart}
-        >
-          🛒 Cart ({cartItemCount})
-        </button>
+
+        <div className="catalogue-header__actions">
+          <button
+            type="button"
+            className="catalogue-cart-button"
+            onClick={onOpenCart}
+          >
+            🛒 Cart ({cartItemCount})
+          </button>
+
+          {currentUser ? (
+            <div className="catalogue-user">
+              <span>Welcome, {currentUser.full_name}</span>
+
+              <button
+                type="button"
+                className="catalogue-auth-button"
+                onClick={onLogout}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="catalogue-auth-button"
+              onClick={onOpenAuth}
+            >
+              Login / Register
+            </button>
+          )}
+        </div>
 
         <p>
           Search and compare computer, mobile and study accessories using

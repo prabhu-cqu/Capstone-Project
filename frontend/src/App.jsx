@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import ProductCataloguePage from "./pages/ProductCataloguePage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CartPanel from "./components/cart/CartPanel";
+import AuthPanel from "./components/auth/AuthPanel";
 import { getProductById } from "./services/productApi";
+import {
+  addCartItem,
+  getCart,
+  removeCartItem,
+  updateCartItem,
+} from "./services/cartApi";
 import "./catalogue.css";
 
 function App() {
@@ -11,22 +18,59 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [cartItems, setCartItems] = useState(() => {
-    const savedCart = localStorage.getItem("smartshop-cart");
-
-    return savedCart ? JSON.parse(savedCart) : [];
+  const [currentUser, setCurrentUser] = useState(() => {
+    const savedUser = localStorage.getItem("smartshop-user");
+    return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartError, setCartError] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem("smartshop-cart", JSON.stringify(cartItems));
-  }, [cartItems]);
+    if (!currentUser) {
+      return undefined;
+    }
+
+    let requestCancelled = false;
+
+    async function loadCustomerCart() {
+      try {
+        setCartLoading(true);
+        setCartError("");
+
+        const response = await getCart();
+
+        if (!requestCancelled) {
+          setCartItems(response.data?.items || []);
+        }
+      } catch (err) {
+        if (!requestCancelled) {
+          console.error("Cart loading error:", err);
+          setCartError(err.message);
+        }
+      } finally {
+        if (!requestCancelled) {
+          setCartLoading(false);
+        }
+      }
+    }
+
+    loadCustomerCart();
+
+    return () => {
+      requestCancelled = true;
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     if (selectedProductId === null) {
       return undefined;
     }
+
+    let requestCancelled = false;
 
     async function loadProductDetails() {
       try {
@@ -35,6 +79,10 @@ function App() {
 
         const response = await getProductById(selectedProductId);
 
+        if (requestCancelled) {
+          return;
+        }
+
         if (response.success && response.data) {
           setSelectedProduct(response.data);
         } else {
@@ -42,16 +90,29 @@ function App() {
           setError("Product not found.");
         }
       } catch (err) {
-        console.error("Product details loading error:", err);
-        setSelectedProduct(null);
-        setError("Unable to load product details.");
+        if (!requestCancelled) {
+          console.error("Product details loading error:", err);
+          setSelectedProduct(null);
+          setError("Unable to load product details.");
+        }
       } finally {
-        setLoading(false);
+        if (!requestCancelled) {
+          setLoading(false);
+        }
       }
     }
 
     loadProductDetails();
+
+    return () => {
+      requestCancelled = true;
+    };
   }, [selectedProductId]);
+
+  async function refreshCart() {
+    const response = await getCart();
+    setCartItems(response.data?.items || []);
+  }
 
   function openProductDetails(productId) {
     setSelectedProductId(productId);
@@ -65,49 +126,113 @@ function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function addToCart(product) {
-    setCartItems((currentItems) => {
-      const existingItem = currentItems.find(
-        (item) => item.product_id === product.product_id
-      );
-
-      if (existingItem) {
-        return currentItems.map((item) =>
-          item.product_id === product.product_id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      }
-
-      return [...currentItems, { ...product, quantity: 1 }];
-    });
-
-    setIsCartOpen(true);
-  }
-
-  function updateCartQuantity(productId, quantity) {
-    if (quantity <= 0) {
-      removeFromCart(productId);
+  function openCart() {
+    if (!currentUser) {
+      setIsAuthOpen(true);
       return;
     }
 
-    setCartItems((currentItems) =>
-      currentItems.map((item) =>
-        item.product_id === productId ? { ...item, quantity } : item
-      )
-    );
+    setCartError("");
+    setIsCartOpen(true);
   }
 
-  function removeFromCart(productId) {
-    setCartItems((currentItems) =>
-      currentItems.filter((item) => item.product_id !== productId)
-    );
+  async function addToCart(product) {
+    if (!currentUser) {
+      setIsAuthOpen(true);
+      return;
+    }
+
+    try {
+      setCartLoading(true);
+      setCartError("");
+
+      await addCartItem(product.product_id, 1);
+      await refreshCart();
+      setIsCartOpen(true);
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      setCartError(err.message);
+      setIsCartOpen(true);
+    } finally {
+      setCartLoading(false);
+    }
+  }
+
+  async function updateCartQuantity(productId, quantity) {
+    if (quantity <= 0) {
+      await removeFromCart(productId);
+      return;
+    }
+
+    try {
+      setCartLoading(true);
+      setCartError("");
+
+      await updateCartItem(productId, quantity);
+      await refreshCart();
+    } catch (err) {
+      console.error("Cart quantity update error:", err);
+      setCartError(err.message);
+    } finally {
+      setCartLoading(false);
+    }
+  }
+
+  async function removeFromCart(productId) {
+    try {
+      setCartLoading(true);
+      setCartError("");
+
+      await removeCartItem(productId);
+      await refreshCart();
+    } catch (err) {
+      console.error("Remove cart item error:", err);
+      setCartError(err.message);
+    } finally {
+      setCartLoading(false);
+    }
+  }
+
+  function handleAuthenticated(user, token) {
+    localStorage.setItem("smartshop-token", token);
+    localStorage.setItem("smartshop-user", JSON.stringify(user));
+    localStorage.removeItem("smartshop-cart");
+    setCurrentUser(user);
+    setCartError("");
+  }
+
+  function logout() {
+    localStorage.removeItem("smartshop-token");
+    localStorage.removeItem("smartshop-user");
+    localStorage.removeItem("smartshop-cart");
+    setCurrentUser(null);
+    setCartItems([]);
+    setCartError("");
+    setIsCartOpen(false);
   }
 
   const cartItemCount = cartItems.reduce(
-    (total, item) => total + item.quantity,
+    (total, item) => total + Number(item.quantity),
     0
   );
+
+  const cartPanel = isCartOpen ? (
+    <CartPanel
+      cartItems={cartItems}
+      loading={cartLoading}
+      error={cartError}
+      onClose={() => setIsCartOpen(false)}
+      onUpdateQuantity={updateCartQuantity}
+      onRemoveItem={removeFromCart}
+    />
+  ) : null;
+
+  const authPanel = isAuthOpen ? (
+    <AuthPanel
+      onClose={() => setIsAuthOpen(false)}
+      onAuthenticated={handleAuthenticated}
+    />
+  ) : null;
 
   if (selectedProductId !== null) {
     if (loading) {
@@ -141,14 +266,8 @@ function App() {
           onAddToCart={addToCart}
         />
 
-        {isCartOpen && (
-          <CartPanel
-            cartItems={cartItems}
-            onClose={() => setIsCartOpen(false)}
-            onUpdateQuantity={updateCartQuantity}
-            onRemoveItem={removeFromCart}
-          />
-        )}
+        {cartPanel}
+        {authPanel}
       </>
     );
   }
@@ -159,17 +278,14 @@ function App() {
         onViewDetails={openProductDetails}
         onAddToCart={addToCart}
         cartItemCount={cartItemCount}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={openCart}
+        currentUser={currentUser}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={logout}
       />
 
-      {isCartOpen && (
-        <CartPanel
-          cartItems={cartItems}
-          onClose={() => setIsCartOpen(false)}
-          onUpdateQuantity={updateCartQuantity}
-          onRemoveItem={removeFromCart}
-        />
-      )}
+      {cartPanel}
+      {authPanel}
     </>
   );
 }

@@ -239,6 +239,7 @@ router.get("/", authenticateToken, async (req, res) => {
         ci.product_id,
         p.name,
         p.description,
+        p.image_url AS imageUrl,
         p.price,
         p.stock,
         ci.quantity,

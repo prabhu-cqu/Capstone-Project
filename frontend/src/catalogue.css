@@ -526,3 +526,68 @@
 .catalogue-cart-button:active {
   transform: translateY(0);
 }
+
+.catalogue-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem 0 1.25rem;
+}
+
+.catalogue-header__actions .catalogue-cart-button {
+  margin: 0;
+}
+
+.catalogue-auth-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.7rem 1.15rem;
+  color: #ffffff;
+  font: inherit;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.14);
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.catalogue-auth-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.catalogue-auth-button:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 3px;
+}
+
+.catalogue-user {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.catalogue-user span {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .catalogue-header__actions,
+  .catalogue-user {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .catalogue-cart-button,
+  .catalogue-auth-button {
+    width: 100%;
+  }
+}
