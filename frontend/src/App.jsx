@@ -25,9 +25,7 @@ function App() {
 
   useEffect(() => {
     if (selectedProductId === null) {
-      setSelectedProduct(null);
-      setError("");
-      return;
+      return undefined;
     }
 
     async function loadProductDetails() {
@@ -62,6 +60,8 @@ function App() {
 
   function returnToCatalogue() {
     setSelectedProductId(null);
+    setSelectedProduct(null);
+    setError("");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
