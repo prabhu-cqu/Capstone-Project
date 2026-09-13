@@ -1,132 +1,169 @@
 USE smartshop_ai;
 
+SET FOREIGN_KEY_CHECKS = 0;
+
+TRUNCATE TABLE products;
+TRUNCATE TABLE categories;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- =========================================================
+-- Categories
+-- =========================================================
+
 INSERT INTO categories (name, description)
 VALUES
-    ('Laptops', 'Portable computers for study, work and everyday use'),
+    ('Laptops', 'Portable computers for study and everyday work'),
+    ('Mobile Devices', 'Tablets and portable mobile technology'),
     ('Accessories', 'Computer and study accessories'),
-    ('Audio', 'Headphones, speakers and audio equipment')
-ON DUPLICATE KEY UPDATE
-    description = VALUES(description);
+    ('Audio', 'Headphones and audio equipment');
 
+
+-- =========================================================
+-- Products
+-- =========================================================
+
+-- 1. HP Pavilion 15
 INSERT INTO products
-    (category_id, name, description, price, stock, specifications)
+(category_id, name, description, price, stock, specifications)
 SELECT
-    c.category_id,
-    'Lenovo IdeaPad 5',
-    'A reliable laptop suitable for university study and everyday productivity.',
-    899.00,
-    15,
+    category_id,
+    'HP Pavilion 15',
+    'A versatile laptop suitable for university study, office work and everyday productivity.',
+    999.00,
+    12,
     JSON_OBJECT(
-        'brand', 'Lenovo',
+        'brand', 'HP',
         'ram', '16GB',
         'storage', '512GB SSD',
         'screen', '15.6 inch'
     )
-FROM categories c
-WHERE c.name = 'Laptops'
-AND NOT EXISTS (
-    SELECT 1 FROM products
-    WHERE name = 'Lenovo IdeaPad 5'
-);
+FROM categories
+WHERE name = 'Laptops';
 
+
+-- 2. Samsung Galaxy Tab A9
 INSERT INTO products
-    (category_id, name, description, price, stock, specifications)
+(category_id, name, description, price, stock, specifications)
 SELECT
-    c.category_id,
-    'Logitech Wireless Mouse',
-    'A comfortable wireless mouse for study and office use.',
-    29.95,
-    40,
+    category_id,
+    'Samsung Galaxy Tab A9',
+    'A compact tablet suitable for study, streaming and everyday mobile use.',
+    349.00,
+    18,
     JSON_OBJECT(
-        'brand', 'Logitech',
-        'connection', 'Wireless',
-        'battery', 'AA'
+        'brand', 'Samsung',
+        'storage', '128GB',
+        'connection', 'Wi-Fi',
+        'screen', '8.7 inch'
     )
-FROM categories c
-WHERE c.name = 'Accessories'
-AND NOT EXISTS (
-    SELECT 1 FROM products
-    WHERE name = 'Logitech Wireless Mouse'
-);
+FROM categories
+WHERE name = 'Mobile Devices';
 
+
+-- 3. Logitech K380 Keyboard
 INSERT INTO products
-    (category_id, name, description, price, stock, specifications)
+(category_id, name, description, price, stock, specifications)
 SELECT
-    c.category_id,
-    'USB-C Laptop Hub',
-    'A multi-port USB-C hub for connecting additional devices.',
-    49.90,
+    category_id,
+    'Logitech K380 Keyboard',
+    'Compact Bluetooth keyboard suitable for study and multi-device use.',
+    69.95,
     25,
     JSON_OBJECT(
-        'ports', 'USB-C, USB-A, HDMI',
+        'brand', 'Logitech',
+        'connection', 'Bluetooth',
+        'feature', 'Multi-device'
+    )
+FROM categories
+WHERE name = 'Accessories';
+
+
+-- 4. Anker 65W USB-C Charger
+INSERT INTO products
+(category_id, name, description, price, stock, specifications)
+SELECT
+    category_id,
+    'Anker 65W USB-C Charger',
+    'Fast USB-C charger suitable for compatible laptops, tablets and smartphones.',
+    79.95,
+    30,
+    JSON_OBJECT(
+        'brand', 'Anker',
+        'power', '65W',
         'connection', 'USB-C'
     )
-FROM categories c
-WHERE c.name = 'Accessories'
-AND NOT EXISTS (
-    SELECT 1 FROM products
-    WHERE name = 'USB-C Laptop Hub'
-);
+FROM categories
+WHERE name = 'Accessories';
 
+
+-- 5. HP Adjustable Laptop Stand
 INSERT INTO products
-    (category_id, name, description, price, stock, specifications)
+(category_id, name, description, price, stock, specifications)
 SELECT
-    c.category_id,
-    'Sony Wireless Headphones',
-    'Wireless headphones designed for study, music and online meetings.',
-    129.00,
+    category_id,
+    'HP Adjustable Laptop Stand',
+    'Adjustable laptop stand designed to improve desk ergonomics and airflow.',
+    54.95,
     20,
     JSON_OBJECT(
-        'brand', 'Sony',
-        'connection', 'Bluetooth',
-        'feature', 'Noise reduction'
+        'brand', 'HP',
+        'feature', 'Adjustable',
+        'material', 'Aluminium'
     )
-FROM categories c
-WHERE c.name = 'Audio'
-AND NOT EXISTS (
-    SELECT 1 FROM products
-    WHERE name = 'Sony Wireless Headphones'
-);
+FROM categories
+WHERE name = 'Accessories';
 
+
+-- 6. JBL Tune 520BT Headphones
 INSERT INTO products
-    (category_id, name, description, price, stock, specifications)
+(category_id, name, description, price, stock, specifications)
 SELECT
-    c.category_id,
-    'JBL Portable Speaker',
-    'A compact portable speaker for indoor and outdoor listening.',
-    79.00,
-    18,
+    category_id,
+    'JBL Tune 520BT Headphones',
+    'Wireless Bluetooth headphones designed for study, music and online meetings.',
+    89.00,
+    22,
     JSON_OBJECT(
         'brand', 'JBL',
         'connection', 'Bluetooth',
+        'feature', 'Wireless'
+    )
+FROM categories
+WHERE name = 'Audio';
+
+
+-- 7. Belkin USB-C Hub
+INSERT INTO products
+(category_id, name, description, price, stock, specifications)
+SELECT
+    category_id,
+    'Belkin USB-C Hub',
+    'Multi-port USB-C hub for connecting displays, storage and other peripherals.',
+    64.95,
+    16,
+    JSON_OBJECT(
+        'brand', 'Belkin',
+        'ports', 'USB-C, USB-A, HDMI',
+        'connection', 'USB-C'
+    )
+FROM categories
+WHERE name = 'Accessories';
+
+
+-- 8. Microsoft Bluetooth Mouse
+INSERT INTO products
+(category_id, name, description, price, stock, specifications)
+SELECT
+    category_id,
+    'Microsoft Bluetooth Mouse',
+    'Compact wireless mouse suitable for study, work and travel.',
+    39.95,
+    35,
+    JSON_OBJECT(
+        'brand', 'Microsoft',
+        'connection', 'Bluetooth',
         'feature', 'Portable'
     )
-FROM categories c
-WHERE c.name = 'Audio'
-AND NOT EXISTS (
-    SELECT 1 FROM products
-    WHERE name = 'JBL Portable Speaker'
-);
-
--- Add product images
-UPDATE products
-SET image_url = CASE name
-  WHEN 'Lenovo IdeaPad 5' THEN
-    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80'
-  WHEN 'Logitech Wireless Mouse' THEN
-    'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=900&q=80'
-  WHEN 'USB-C Laptop Hub' THEN
-    'https://images.unsplash.com/photo-1625842268584-8f3296236761?auto=format&fit=crop&w=900&q=80'
-  WHEN 'Sony Wireless Headphones' THEN
-    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80'
-  WHEN 'JBL Portable Speaker' THEN
-    'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=80'
-  ELSE image_url
-END
-WHERE name IN (
-  'Lenovo IdeaPad 5',
-  'Logitech Wireless Mouse',
-  'USB-C Laptop Hub',
-  'Sony Wireless Headphones',
-  'JBL Portable Speaker'
-);
+FROM categories
+WHERE name = 'Accessories';
