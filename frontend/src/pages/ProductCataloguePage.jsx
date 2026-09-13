@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductFilterPanel from "../components/catalogue/ProductFilterPanel";
 import ProductGrid from "../components/catalogue/ProductGrid";
-import { mockProducts } from "../data/mockProducts";
+import { getProducts } from "../services/productApi";
 
 const initialFilters = {
   searchText: "",
@@ -12,22 +12,64 @@ const initialFilters = {
   sortOption: "name-ascending",
 };
 
-function ProductCataloguePage({ onViewDetails }) {
+function ProductCataloguePage({
+  onViewDetails,
+  onAddToCart,
+  cartItemCount,
+  onOpenCart,
+}) {
   const [filters, setFilters] = useState(initialFilters);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await getProducts();
+
+        const formattedProducts = (response.data || []).map((product) => ({
+          ...product,
+          productId: product.product_id,
+          category: product.category_name,
+          brand: product.specifications?.brand || "SmartShop",
+          stockQuantity: Number(product.stock),
+          imageUrl: product.imageUrl || "",
+        }));
+
+        setProducts(formattedProducts);
+      } catch (err) {
+        console.error("Product loading error:", err);
+        setError("Unable to load products. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProducts();
+  }, []);
 
   const activeProducts = useMemo(
-    () => mockProducts.filter((product) => product.isActive),
-    [],
+    () => products.filter((product) => product.isActive !== false),
+    [products],
   );
 
   const categories = useMemo(
     () =>
-      [...new Set(activeProducts.map((product) => product.category))].sort(),
+      [...new Set(activeProducts.map((product) => product.category))]
+        .filter(Boolean)
+        .sort(),
     [activeProducts],
   );
 
   const brands = useMemo(
-    () => [...new Set(activeProducts.map((product) => product.brand))].sort(),
+    () =>
+      [...new Set(activeProducts.map((product) => product.brand))]
+        .filter(Boolean)
+        .sort(),
     [activeProducts],
   );
 
@@ -48,6 +90,7 @@ function ProductCataloguePage({ onViewDetails }) {
         product.description,
         product.compatibility,
       ]
+        .filter(Boolean)
         .join(" ")
         .toLowerCase();
 
@@ -61,10 +104,12 @@ function ProductCataloguePage({ onViewDetails }) {
         filters.brand === "" || product.brand === filters.brand;
 
       const matchesMinimumPrice =
-        minimumPrice === null || product.price >= minimumPrice;
+        minimumPrice === null ||
+        Number(product.price) >= minimumPrice;
 
       const matchesMaximumPrice =
-        maximumPrice === null || product.price <= maximumPrice;
+        maximumPrice === null ||
+        Number(product.price) <= maximumPrice;
 
       return (
         matchesSearch &&
@@ -81,10 +126,10 @@ function ProductCataloguePage({ onViewDetails }) {
           return secondProduct.name.localeCompare(firstProduct.name);
 
         case "price-ascending":
-          return firstProduct.price - secondProduct.price;
+          return Number(firstProduct.price) - Number(secondProduct.price);
 
         case "price-descending":
-          return secondProduct.price - firstProduct.price;
+          return Number(secondProduct.price) - Number(firstProduct.price);
 
         case "name-ascending":
         default:
@@ -101,38 +146,65 @@ function ProductCataloguePage({ onViewDetails }) {
     <main className="catalogue-page">
       <header className="catalogue-header">
         <p className="catalogue-header__eyebrow">SmartShop AI</p>
+
         <h1>Product catalogue</h1>
+        <button
+          type="button"
+          className="catalogue-cart-button"
+          onClick={onOpenCart}
+        >
+          🛒 Cart ({cartItemCount})
+        </button>
+
         <p>
           Search and compare computer, mobile and study accessories using
           verified catalogue information.
         </p>
       </header>
 
-      <div className="catalogue-layout">
-        <ProductFilterPanel
-          filters={filters}
-          categories={categories}
-          brands={brands}
-          onFilterChange={setFilters}
-          onClearFilters={clearFilters}
-        />
+      {loading && (
+        <p role="status">
+          Loading products from the SmartShop AI database...
+        </p>
+      )}
 
-        <section className="catalogue-results" aria-labelledby="results-heading">
-          <div className="catalogue-results__heading">
-            <h2 id="results-heading">Available products</h2>
+      {error && (
+        <p role="alert" className="catalogue-error">
+          {error}
+        </p>
+      )}
 
-            <p role="status">
-              {filteredProducts.length}{" "}
-              {filteredProducts.length === 1 ? "product" : "products"}
-            </p>
-          </div>
-
-          <ProductGrid
-            products={filteredProducts}
-            onViewDetails={onViewDetails}
+      {!loading && !error && (
+        <div className="catalogue-layout">
+          <ProductFilterPanel
+            filters={filters}
+            categories={categories}
+            brands={brands}
+            onFilterChange={setFilters}
+            onClearFilters={clearFilters}
           />
-        </section>
-      </div>
+
+          <section
+            className="catalogue-results"
+            aria-labelledby="results-heading"
+          >
+            <div className="catalogue-results__heading">
+              <h2 id="results-heading">Available products</h2>
+
+              <p role="status">
+                {filteredProducts.length}{" "}
+                {filteredProducts.length === 1 ? "product" : "products"}
+              </p>
+            </div>
+
+            <ProductGrid
+              products={filteredProducts}
+              onViewDetails={onViewDetails}
+              onAddToCart={onAddToCart}
+            />
+          </section>
+        </div>
+      )}
     </main>
   );
 }

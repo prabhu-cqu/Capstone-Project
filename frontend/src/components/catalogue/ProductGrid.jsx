@@ -1,6 +1,6 @@
 import ProductCard from "./ProductCard";
 
-function ProductGrid({ products, onViewDetails }) {
+function ProductGrid({ products, onViewDetails, onAddToCart }) {
   if (products.length === 0) {
     return (
       <div className="catalogue-message" role="status">
@@ -20,6 +20,7 @@ function ProductGrid({ products, onViewDetails }) {
           key={product.productId}
           product={product}
           onViewDetails={onViewDetails}
+          onAddToCart={onAddToCart}
         />
       ))}
     </section>
