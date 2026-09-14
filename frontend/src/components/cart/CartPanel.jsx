@@ -7,6 +7,7 @@ function CartPanel({
   onClose,
   onUpdateQuantity,
   onRemoveItem,
+  onCheckout,
 }) {
   const subtotal = cartItems.reduce(
     (total, item) => total + Number(item.price) * Number(item.quantity),
@@ -132,13 +133,14 @@ function CartPanel({
                 </div>
 
                 <p className="cart-summary-note">
-                  Checkout will be added in the next development stage.
+                  Review your items before placing your simulated order.
                 </p>
 
                 <button
                   type="button"
                   className="cart-checkout-button"
-                  disabled
+                  onClick={onCheckout}
+                  disabled={loading || cartItems.length === 0}
                 >
                   Proceed to Checkout
                 </button>

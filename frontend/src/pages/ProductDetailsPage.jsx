@@ -41,10 +41,12 @@ function ProductDetailsPage({ product, onBack, onAddToCart }) {
         ← Back to catalogue
       </button>
       <button
-  type="button"
-  onClick={() => onAddToCart(product)}
-  disabled={Number(product.stock) <= 0}
->
+        type="button"
+        className="details-add-cart-button"
+        onClick={() => onAddToCart(product)}
+        disabled={Number(product.stock) <= 0}
+        aria-label={`Add ${product.name} to cart`}
+      >
   {Number(product.stock) > 0 ? "Add to Cart" : "Out of Stock"}
 </button>
 

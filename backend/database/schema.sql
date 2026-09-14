@@ -77,12 +77,14 @@ CREATE TABLE IF NOT EXISTS reviews (
 
 CREATE TABLE IF NOT EXISTS carts (
     cart_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL UNIQUE,
+    user_id INT NOT NULL,
     status ENUM('active', 'completed', 'abandoned')
         NOT NULL DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_carts_user_id (user_id),
 
     CONSTRAINT fk_carts_user
         FOREIGN KEY (user_id)

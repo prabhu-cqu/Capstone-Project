@@ -3,6 +3,7 @@ import ProductCataloguePage from "./pages/ProductCataloguePage";
 import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CartPanel from "./components/cart/CartPanel";
 import AuthPanel from "./components/auth/AuthPanel";
+import CheckoutPanel from "./components/orders/CheckoutPanel";
 import { getProductById } from "./services/productApi";
 import {
   addCartItem,
@@ -10,6 +11,7 @@ import {
   removeCartItem,
   updateCartItem,
 } from "./services/cartApi";
+import { createOrder } from "./services/orderApi";
 import "./catalogue.css";
 
 function App() {
@@ -28,6 +30,10 @@ function App() {
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
+  const [catalogueRefreshKey, setCatalogueRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!currentUser) {
@@ -193,6 +199,82 @@ function App() {
     }
   }
 
+  function openCheckout() {
+    if (!currentUser) {
+      setIsCartOpen(false);
+      setIsAuthOpen(true);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setCartError("Your cart is empty.");
+      return;
+    }
+
+    setCheckoutError("");
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+    }
+
+  function returnToCart() {
+    if (checkoutSubmitting) {
+      return;
+    }
+
+    setCheckoutError("");
+    setIsCheckoutOpen(false);
+    setIsCartOpen(true);
+  }
+
+  async function placeOrder() {
+    if (checkoutSubmitting || cartItems.length === 0) {
+      return;
+    }
+
+    try {
+      setCheckoutSubmitting(true);
+      setCheckoutError("");
+
+      await createOrder();
+
+      setCatalogueRefreshKey((currentKey) => currentKey + 1);
+
+      setSelectedProduct((currentProduct) => {
+        if (!currentProduct) {
+          return currentProduct;
+        }
+
+        const orderedItem = cartItems.find(
+          (item) =>
+            Number(item.product_id) === Number(currentProduct.product_id)
+        );
+
+        if (!orderedItem) {
+          return currentProduct;
+        }
+
+        return {
+          ...currentProduct,
+          stock: Math.max(
+            0,
+            Number(currentProduct.stock) - Number(orderedItem.quantity)
+          ),
+        };
+      });
+
+      setCartItems([]);
+      setCartError("");
+      setIsCheckoutOpen(false);
+
+      window.alert("Order placed successfully.");
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setCheckoutError(err.message);
+    } finally {
+      setCheckoutSubmitting(false);
+    }
+  }
+
   function handleAuthenticated(user, token) {
     localStorage.setItem("smartshop-token", token);
     localStorage.setItem("smartshop-user", JSON.stringify(user));
@@ -224,6 +306,7 @@ function App() {
       onClose={() => setIsCartOpen(false)}
       onUpdateQuantity={updateCartQuantity}
       onRemoveItem={removeFromCart}
+      onCheckout={openCheckout}
     />
   ) : null;
 
@@ -231,6 +314,16 @@ function App() {
     <AuthPanel
       onClose={() => setIsAuthOpen(false)}
       onAuthenticated={handleAuthenticated}
+    />
+  ) : null;
+
+  const checkoutPanel = isCheckoutOpen ? (
+    <CheckoutPanel
+      cartItems={cartItems}
+      submitting={checkoutSubmitting}
+      error={checkoutError}
+      onClose={returnToCart}
+      onConfirm={placeOrder}
     />
   ) : null;
 
@@ -268,6 +361,7 @@ function App() {
 
         {cartPanel}
         {authPanel}
+        {checkoutPanel}
       </>
     );
   }
@@ -282,10 +376,12 @@ function App() {
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={logout}
+        refreshKey={catalogueRefreshKey}
       />
 
       {cartPanel}
       {authPanel}
+      {checkoutPanel}
     </>
   );
 }

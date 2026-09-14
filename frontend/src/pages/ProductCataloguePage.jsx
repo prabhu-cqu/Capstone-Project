@@ -20,6 +20,7 @@ function ProductCataloguePage({
   currentUser,
   onOpenAuth,
   onLogout,
+  refreshKey,
 }) {
   const [filters, setFilters] = useState(initialFilters);
   const [products, setProducts] = useState([]);
@@ -53,7 +54,7 @@ function ProductCataloguePage({
     }
 
     loadProducts();
-  }, []);
+  }, [refreshKey]);
 
   const activeProducts = useMemo(
     () => products.filter((product) => product.isActive !== false),
