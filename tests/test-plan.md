@@ -50,7 +50,7 @@ A requirement should only be marked as fully tested when its relevant test cases
 | FR2 | Product search, filter and sort | `catalogue-test-cases.md` | Prepared - Not Run |
 | FR3 | Product details | `catalogue-test-cases.md` | Prepared - Not Run |
 | FR4 | Customer registration, login and logout | `authentication-test-cases.md` | Tested - Pass |
-| FR5 | Persistent shopping cart | To be updated/created | Retesting Required |
+| FR5 | Persistent shopping cart | `cart-test-cases.md` | Tested - Pass |
 | FR6 | Simulated checkout | To be updated/created | Retesting Required |
 | FR7 | Customer order history | To be created | Not Implemented |
 | FR8 | AI catalogue product Q&A | To be created | Not Implemented |
@@ -151,22 +151,56 @@ All 9 authentication test cases were executed successfully. FR4 authentication t
 
 ## 7. Shopping Cart Testing - FR5
 
-The shopping cart implementation should be retested using products retrieved from the current MySQL catalogue.
-
-Testing should verify:
+Persistent shopping cart testing verifies:
 
 - Add product to cart
-- Remove product from cart
-- Change product quantity
-- Cart item count
-- Cart totals
-- Cart persistence
-- Cart behaviour after login/logout
-- Stock-related restrictions where applicable
+- Database persistence of cart items
+- Adding the same product again
+- Updating product quantities
+- Cart subtotal calculations
+- Cart persistence after page refresh
+- Removing products from the cart
+- Available stock restrictions
+- Authentication requirements
+
+Detailed shopping cart test cases and actual results are documented in:
+
+`cart-test-cases.md`
+
+### Shopping Cart Test Results
+
+| Test Case | Description | Status |
+|---|---|---|
+| TC-CART-001 | Add product to cart | Pass after defect fix |
+| TC-CART-002 | Verify cart item in MySQL | Pass |
+| TC-CART-003 | Add same product again | Pass |
+| TC-CART-004 | Update cart quantity | Pass |
+| TC-CART-005 | Verify cart total calculation | Pass |
+| TC-CART-006 | Cart persists after page refresh | Pass |
+| TC-CART-007 | Remove product from cart | Pass |
+| TC-CART-008 | Prevent quantity exceeding available stock | Pass |
+| TC-CART-009 | Authentication required for cart | Pass |
+
+### Shopping Cart Test Summary
+
+| Result | Number of Tests |
+|---|---:|
+| Pass | 9 |
+| Fail | 0 |
+| Not Run | 0 |
+| Total | 9 |
+
+During TC-CART-001, the initial cart request failed because the cart API service was configured to use port `5001` while the backend was running on port `5000`.
+
+The API configuration was corrected in `frontend/src/services/cartApi.js` and TC-CART-001 was retested successfully.
+
+Testing confirmed that cart items are persisted in MySQL, quantities can be updated, totals are calculated correctly, cart contents remain after page refresh, products can be removed, stock limits are enforced and unauthenticated customers are required to log in before using the persistent cart.
 
 ### Current Status
 
-**Retesting Required**
+**Tested - Pass**
+
+All 9 FR5 shopping cart test cases passed for the current implementation.
 
 ---
 
@@ -290,9 +324,9 @@ After a defect is corrected:
 The next testing activities are:
 
 1. Execute and record FR1-FR3 catalogue test cases against the current 14-product database.
-2. Retest FR5 persistent shopping cart functionality using database-backed products.
-3. Retest FR6 simulated checkout functionality.
-4. Create and execute tests for customer order history when FR7 is implemented.
-5. Create tests for AI functionality as FR8-FR10 are implemented.
-6. Create tests for administrator functionality as FR11-FR13 are implemented.
-7. Record defects and retest results whenever failures are identified.
+
+2. Retest FR6 simulated checkout functionality.
+3. Create and execute tests for customer order history when FR7 is implemented.
+4. Create tests for AI functionality as FR8-FR10 are implemented.
+5. Create tests for administrator functionality as FR11-FR13 are implemented.
+6. Record defects and retest results whenever failures are identified.
