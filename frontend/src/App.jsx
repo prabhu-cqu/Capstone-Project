@@ -284,14 +284,17 @@ function App() {
   }
 
   function logout() {
-    localStorage.removeItem("smartshop-token");
-    localStorage.removeItem("smartshop-user");
-    localStorage.removeItem("smartshop-cart");
-    setCurrentUser(null);
-    setCartItems([]);
-    setCartError("");
-    setIsCartOpen(false);
-  }
+  localStorage.removeItem("smartshop-token");
+  localStorage.removeItem("smartshop-user");
+  localStorage.removeItem("smartshop-cart");
+
+  setCurrentUser(null);
+  setCartItems([]);
+  setCartError("");
+  setIsCartOpen(false);
+
+  alert("Logged out successfully!");
+}
 
   const cartItemCount = cartItems.reduce(
     (total, item) => total + Number(item.quantity),

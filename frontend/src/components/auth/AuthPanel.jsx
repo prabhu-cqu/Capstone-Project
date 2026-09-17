@@ -19,14 +19,33 @@ function AuthPanel({ onClose, onAuthenticated }) {
       let response;
 
       if (mode === "register") {
+        // Register new customer
         await registerUser({ fullName, email, password });
-        response = await loginUser({ email, password });
-      } else {
-        response = await loginUser({ email, password });
-      }
 
-      onAuthenticated(response.data, response.token);
-      onClose();
+        // Automatically login after registration
+        response = await loginUser({ email, password });
+
+        // Store authenticated user and token
+        onAuthenticated(response.data, response.token);
+
+        // Registration success message
+        alert(
+          `Account created successfully! Welcome, ${response.data.full_name}!`
+        );
+
+        onClose();
+      } else {
+        // Login existing customer
+        response = await loginUser({ email, password });
+
+        // Store authenticated user and token
+        onAuthenticated(response.data, response.token);
+
+        // Login success message
+        alert(`Login successful! Welcome, ${response.data.full_name}!`);
+
+        onClose();
+      }
     } catch (error) {
       setMessage(error.message);
     } finally {
@@ -51,6 +70,7 @@ function AuthPanel({ onClose, onAuthenticated }) {
         <div className="auth-header">
           <div>
             <p className="auth-eyebrow">SmartShop AI</p>
+
             <h2 id="auth-title">
               {mode === "login" ? "Welcome back" : "Create an account"}
             </h2>
@@ -70,7 +90,9 @@ function AuthPanel({ onClose, onAuthenticated }) {
           <button
             type="button"
             className={
-              mode === "login" ? "auth-tab auth-tab--active" : "auth-tab"
+              mode === "login"
+                ? "auth-tab auth-tab--active"
+                : "auth-tab"
             }
             onClick={() => changeMode("login")}
           >
@@ -80,7 +102,9 @@ function AuthPanel({ onClose, onAuthenticated }) {
           <button
             type="button"
             className={
-              mode === "register" ? "auth-tab auth-tab--active" : "auth-tab"
+              mode === "register"
+                ? "auth-tab auth-tab--active"
+                : "auth-tab"
             }
             onClick={() => changeMode("register")}
           >
@@ -120,7 +144,9 @@ function AuthPanel({ onClose, onAuthenticated }) {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete={
-                mode === "login" ? "current-password" : "new-password"
+                mode === "login"
+                  ? "current-password"
+                  : "new-password"
               }
               minLength={8}
               required
