@@ -323,10 +323,12 @@ After a defect is corrected:
 
 The next testing activities are:
 
-1. Execute and record FR1-FR3 catalogue test cases against the current 14-product database.
+1. Retest FR6 simulated checkout functionality.
 
-2. Retest FR6 simulated checkout functionality.
-3. Create and execute tests for customer order history when FR7 is implemented.
-4. Create tests for AI functionality as FR8-FR10 are implemented.
-5. Create tests for administrator functionality as FR11-FR13 are implemented.
-6. Record defects and retest results whenever failures are identified.
+2. Create and execute tests for customer order history when FR7 is implemented.
+
+3. Create tests for AI functionality as FR8-FR10 are implemented.
+
+4. Create tests for administrator functionality as FR11-FR13 are implemented.
+
+5. Record defects and retest results whenever failures are identified.
