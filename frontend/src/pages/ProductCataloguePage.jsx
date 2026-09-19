@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import ProductFilterPanel from "../components/catalogue/ProductFilterPanel";
 import ProductGrid from "../components/catalogue/ProductGrid";
+import CatalogueAssistant from "../components/ai/CatalogueAssistant";
 import { getProducts } from "../services/productApi";
+
 
 const initialFilters = {
   searchText: "",
@@ -190,6 +192,7 @@ function ProductCataloguePage({
           verified catalogue information.
         </p>
       </header>
+      <CatalogueAssistant />
 
       {loading && (
         <p role="status">
