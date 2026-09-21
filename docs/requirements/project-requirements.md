@@ -23,8 +23,8 @@ Development and testing are completed progressively as individual requirements a
 | FR5 | Persistent shopping cart | Must Have | Implemented - Retesting Required |
 | FR6 | Simulated checkout | Must Have | Implemented - Retesting Required |
 | FR7 | Customer order history | Should Have | Planned |
-| FR8 | AI catalogue product Q&A | Must Have | Planned |
-| FR9 | AI guided recommendations | Must Have | Planned |
+| FR8 | AI catalogue product Q&A | Must Have | Implemented and Evaluated - Pass (8/8) |
+| FR9 | AI guided recommendations | Must Have | Implemented and Evaluated - Pass (8/8) |
 | FR10 | AI review summaries | Must Have | Planned |
 | FR11 | Admin catalogue management | Should Have | Planned |
 | FR12 | Admin review moderation | Should Have | Planned |
@@ -332,12 +332,71 @@ The AI assistant should answer customer questions using available catalogue info
 
 Responses should be grounded in SmartShop AI product data where applicable.
 
+### Current Implementation
+
+FR8 - AI Catalogue Product Q&A has been implemented.
+
+The current implementation integrates:
+
+`React Frontend -> Express Backend -> MySQL Catalogue -> External AI Service`
+
+The catalogue assistant:
+
+- Accepts customer catalogue questions through the React frontend.
+- Retrieves approved product information from the SmartShop MySQL catalogue.
+- Uses the backend AI service to generate catalogue-grounded responses.
+- Uses current catalogue information for product names, prices, stock and specifications.
+- Handles products that are not available in the catalogue.
+- Avoids inventing unsupported information when requested information is not available.
+- Provides controlled error handling when AI assistance is unavailable.
+
+The frontend catalogue page includes an AI assistant interface where customers can enter catalogue questions and receive responses.
+
+### Testing
+
+FR8 evaluation is documented in:
+
+`ai/evaluation/catalogue-qa-evaluation.md`
+
+and the overall AI evaluation results are recorded in:
+
+`ai/evaluation/ai-evaluation-results.md`
+
+The following eight FR8 evaluation cases were executed:
+
+- FR8-AI-01 - Catalogue price accuracy
+- FR8-AI-02 - Stock accuracy
+- FR8-AI-03 - Catalogue grounding
+- FR8-AI-04 - Product retrieval
+- FR8-AI-05 - Unsupported product handling
+- FR8-AI-06 - Numerical accuracy
+- FR8-AI-07 - Product comparison
+- FR8-AI-08 - Unsupported information handling
+
+All eight FR8 evaluation cases passed.
+
+Testing confirmed that the assistant:
+
+- Correctly returned catalogue prices.
+- Correctly returned current stock information supplied by the system.
+- Used stored catalogue product details.
+- Retrieved products from the requested catalogue category.
+- Did not invent a product that was not present in the catalogue.
+- Correctly handled numerical price comparisons.
+- Compared products using available catalogue information.
+- Did not invent unsupported warranty information.
+
+All eight tested responses were returned within the project's 10-second response-time target.
+
+The average response time across the eight evaluation cases was approximately 4.11 seconds.
+
+Screenshot evidence was captured during frontend testing.
+
+A minor frontend presentation issue was observed where Markdown formatting characters were displayed as plain text in some longer AI responses. This did not affect catalogue grounding or factual accuracy.
+
 ### Status
 
-**Planned**
-
----
-
+**Implemented and Evaluated - Pass (8/8)**
 ## FR9 - AI Guided Recommendations
 
 ### Requirement
@@ -352,9 +411,76 @@ The recommendation feature should consider relevant catalogue information such a
 - Intended use
 - Customer requirements
 
+### Current Implementation
+
+FR9 - AI Guided Product Recommendations has been implemented.
+
+The current implementation integrates:
+
+`Customer Request -> Express Backend -> MySQL Catalogue -> Budget Filtering -> External AI Service`
+
+The recommendation feature:
+
+- Accepts customer recommendation requests through the backend API.
+- Retrieves active products from the SmartShop MySQL catalogue.
+- Retrieves product category information using the categories table.
+- Detects stated maximum customer budgets.
+- Filters products against the customer's maximum budget before supplying catalogue information to the AI service.
+- Considers product category, intended use and customer requirements.
+- Recommends only products supplied from the SmartShop catalogue.
+- Avoids inventing products, prices, stock levels and specifications.
+- Avoids unsupported compatibility claims.
+- Provides an appropriate response when no suitable catalogue product is available.
+- Provides controlled fallback behaviour when the external AI service is unavailable.
+- Records AI response time for evaluation.
+
+The backend endpoint for the recommendation feature is:
+
+`POST /api/ai/recommend`
+
+### Testing
+
+FR9 evaluation is documented in:
+
+`ai/evaluation/recommendation-evaluation.md`
+
+and the overall AI evaluation results are recorded in:
+
+`ai/evaluation/ai-evaluation-results.md`
+
+The following eight FR9 evaluation cases were executed:
+
+- FR9-AI-01 - Budget + use case
+- FR9-AI-02 - Budget + intended use
+- FR9-AI-03 - Category + budget
+- FR9-AI-04 - Intended use
+- FR9-AI-05 - Budget + category
+- FR9-AI-06 - Device requirement
+- FR9-AI-07 - No suitable match
+- FR9-AI-08 - Non-catalogue request
+
+All eight FR9 evaluation cases produced the expected functional behaviour.
+
+Testing confirmed that the recommendation assistant:
+
+- Recommended products stored in the SmartShop catalogue.
+- Respected stated customer budgets.
+- Considered product categories and intended use.
+- Explained why recommended products matched customer requirements.
+- Did not recommend products above stated maximum budgets.
+- Correctly handled requests where no suitable catalogue product was available.
+- Did not invent a PlayStation 5 or other non-catalogue product.
+- Avoided unsupported compatibility claims.
+
+Seven of the eight recorded responses were returned within the project's 10-second response-time target.
+
+FR9-AI-08 returned the correct functional response in 10.171 seconds.
+
+This means 87.5% of the recorded FR9 responses were returned within 10 seconds.
+
 ### Status
 
-**Planned**
+**Implemented and Evaluated - Pass (8/8)**
 
 ---
 
@@ -492,8 +618,8 @@ Source code and documentation should be maintained using Git and GitHub.
 | FR5 | Testing to be updated | Retesting Required |
 | FR6 | Testing to be updated | Retesting Required |
 | FR7 | Future testing | Planned |
-| FR8 | Future testing | Planned |
-| FR9 | Future testing | Planned |
+| FR8 | FR8-AI-01 to FR8-AI-08 | Implemented and Evaluated - Pass (8/8) |
+| FR9 | FR9-AI-01 to FR9-AI-08 | Implemented and Evaluated - Pass (8/8) |
 | FR10 | Future testing | Planned |
 | FR11 | Future testing | Planned |
 | FR12 | Future testing | Planned |
@@ -517,22 +643,28 @@ The following major functionality is currently implemented:
 - Customer logout
 - Persistent cart implementation
 - Simulated checkout implementation
-
+- AI catalogue product Q&A
+- Catalogue-grounded AI backend service
+- Frontend catalogue AI assistant
+- AI guided product recommendation backend
+- Server-side recommendation budget filtering
+- Catalogue-grounded recommendation service
+- Controlled AI recommendation fallback handling
 Current formal testing includes:
 
 - FR1: 3 tests passed and 1 test remains Not Run
 - FR2: 6 tests passed
 - FR3: 3 tests passed
 - FR4: 9 tests passed
-
-Across FR1-FR4, 21 tests have been executed and passed, with 1 catalogue test remaining Not Run.
+- FR8: 8 AI evaluation cases passed
+Across the currently evaluated requirements, 37 tests have been executed and passed, with 1 catalogue test remaining Not Run.
 
 The next development and verification priorities include:
 
 - Complete TC-CAT-004 empty catalogue testing in a controlled test environment
 - Retest FR5 cart functionality
 - Retest FR6 simulated checkout
-- Develop AI catalogue Q&A
-- Develop guided product recommendations
+
+
 - Develop review summarisation
 - Develop required administrator functionality

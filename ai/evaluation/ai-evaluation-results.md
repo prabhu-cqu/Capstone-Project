@@ -4,7 +4,11 @@
 
 This document records the execution results for the SmartShop AI evaluation cases covering FR8, FR9 and FR10.
 
-FR8 - Catalogue-Grounded AI Q&A has now been implemented and evaluated. FR9 - Guided Recommendations and FR10 - Review Summaries remain to be implemented and evaluated.
+FR8 - Catalogue-Grounded AI Q&A has been implemented and evaluated.
+
+FR9 - AI Guided Product Recommendations has been implemented and evaluated.
+
+FR10 - Review Summaries remains to be implemented and evaluated.
 
 ---
 
@@ -13,9 +17,9 @@ FR8 - Catalogue-Grounded AI Q&A has now been implemented and evaluated. FR9 - Gu
 | AI Feature | Requirement | Cases Prepared | Passed | Failed | Not Run |
 |---|---|---:|---:|---:|---:|
 | Catalogue Q&A | FR8 | 8 | 8 | 0 | 0 |
-| Guided Recommendations | FR9 | 8 | 0 | 0 | 8 |
+| Guided Recommendations | FR9 | 8 | 8 | 0 | 0 |
 | Review Summaries | FR10 | 8 | 0 | 0 | 8 |
-| **Total** | **FR8-FR10** | **24** | **8** | **0** | **16** |
+| **Total** | **FR8-FR10** | **24** | **16** | **0** | **8** |
 
 ---
 
@@ -73,37 +77,97 @@ A minor presentation issue was observed where Markdown formatting characters suc
 
 ---
 
-## 6. FR9 and FR10 Status
+## 6. FR9 Guided Recommendation Results
 
-FR9 - Guided Product Recommendations has 8 prepared evaluation cases. These cases have not yet been executed because FR9 implementation and integration are still pending.
+All eight planned FR9 Guided Product Recommendation evaluation cases were executed.
 
-FR10 - Review Summaries has 8 prepared evaluation cases. These cases have not yet been executed because FR10 implementation and integration are still pending.
+| ID | Evaluation Focus | Result | Response Time |
+|---|---|---|---:|
+| FR9-AI-01 | Budget + use case | Pass | 6.864 s |
+| FR9-AI-02 | Budget + intended use | Pass | 7.594 s |
+| FR9-AI-03 | Category + budget | Pass | 9.724 s |
+| FR9-AI-04 | Intended use | Pass | 8.848 s |
+| FR9-AI-05 | Budget + category | Pass | 8.235 s |
+| FR9-AI-06 | Device requirement | Pass | 7.873 s |
+| FR9-AI-07 | No suitable match | Pass | 5.758 s |
+| FR9-AI-08 | Non-catalogue request | Pass | 10.171 s |
 
-The existing `recommendation-evaluation.md` and `review-summary-evaluation.md` files will be used when these features are implemented.
+All eight FR9 cases produced the expected functional behaviour.
+
+The recommendation assistant successfully recommended products stored in the SmartShop catalogue, respected stated customer budgets, considered intended use and product requirements, and provided appropriate explanations.
+
+The assistant also correctly handled requests where no suitable catalogue product was available. It did not invent a gaming laptop under $500 and did not recommend a PlayStation 5 that was not stored in the catalogue.
+
+Seven of the eight recorded FR9 responses were returned within 10 seconds. FR9-AI-08 returned the correct functional response in 10.171 seconds.
+
+Therefore, 87.5% of the recorded FR9 responses were returned within 10 seconds.
 
 ---
 
-## 7. Defects and Retesting
+## 7. FR9 Budget and Catalogue Controls
 
-Any AI evaluation failure will be documented before correction.
+FR9 includes server-side budget control.
 
-After a defect is corrected:
+When a customer specifies a maximum budget, the SmartShop backend identifies the budget and filters catalogue products before they are supplied to the AI recommendation service.
 
-1. The failed evaluation case will be executed again.
-2. The new AI output will be compared with the expected behaviour.
-3. Related AI cases will be checked for regression issues.
-4. The retest result will be recorded.
+Examples tested included:
 
-The FR8 evaluation identified a minor frontend presentation issue involving raw Markdown formatting characters. No catalogue-grounding or factual-accuracy failures were identified during the eight FR8 evaluation cases.
+- Laptop under $800
+- Laptop with a budget of $1,000
+- Wireless headphones under $100
+- Tablet under $400
+- Gaming laptop under $500
+
+This control prevents products above the customer's stated maximum budget from being supplied as recommendation candidates.
+
+The recommendation service is also instructed to use only the supplied SmartShop catalogue information and avoid inventing products, prices, stock levels, specifications or unsupported compatibility information.
 
 ---
 
-## 8. Current Status
+## 8. AI Service Failure Handling
+
+During FR9 testing, the external AI service temporarily returned a 503 UNAVAILABLE response because the model was experiencing high demand.
+
+SmartShop handled the external service failure and returned the controlled fallback message:
+
+"AI recommendations are currently unavailable. Please browse the product catalogue."
+
+This demonstrates controlled fallback behaviour when the external AI service is temporarily unavailable.
+
+---
+
+## 9. FR10 Status
+
+FR10 - Review Summaries has eight prepared evaluation cases.
+
+These cases have not yet been executed because FR10 implementation and integration are still pending.
+
+The existing `review-summary-evaluation.md` file will be used when FR10 is implemented.
+
+---
+
+## 10. Defects and Testing Observations
+
+FR8 testing identified a minor frontend presentation issue involving raw Markdown formatting characters in some AI responses. This did not affect catalogue grounding or factual accuracy.
+
+During FR9 development, budget filtering was strengthened so that stated maximum budgets are enforced by the backend before catalogue products are supplied to the recommendation service.
+
+A temporary external AI service availability error was also observed during FR9 testing. The application's controlled fallback behaviour operated correctly.
+
+No unsupported product recommendation was identified in the final eight FR9 evaluation results.
+
+---
+
+## 11. Current Status
 
 **FR8: Implemented and Evaluated - 8/8 Passed**
 
-**FR9: Prepared - Not Run**
+**FR9: Implemented and Evaluated - 8/8 Passed**
 
 **FR10: Prepared - Not Run**
 
-A total of 24 AI evaluation cases are currently defined across FR8-FR10. Eight FR8 cases have been executed and passed, while the remaining 16 FR9 and FR10 cases will be executed after their respective features are implemented.
+A total of 24 AI evaluation cases are defined across FR8-FR10.
+
+Sixteen cases have now been executed across FR8 and FR9, with all 16 producing the expected functional results.
+
+The remaining eight FR10 evaluation cases will be executed after the Review Summaries feature is implemented.
