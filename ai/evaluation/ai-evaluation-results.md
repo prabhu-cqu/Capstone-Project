@@ -8,7 +8,7 @@ FR8 - Catalogue-Grounded AI Q&A has been implemented and evaluated.
 
 FR9 - AI Guided Product Recommendations has been implemented and evaluated.
 
-FR10 - Review Summaries remains to be implemented and evaluated.
+FR10 - AI Customer Review Summaries has been implemented and evaluated.
 
 ---
 
@@ -18,8 +18,8 @@ FR10 - Review Summaries remains to be implemented and evaluated.
 |---|---|---:|---:|---:|---:|
 | Catalogue Q&A | FR8 | 8 | 8 | 0 | 0 |
 | Guided Recommendations | FR9 | 8 | 8 | 0 | 0 |
-| Review Summaries | FR10 | 8 | 0 | 0 | 8 |
-| **Total** | **FR8-FR10** | **24** | **16** | **0** | **8** |
+| Review Summaries | FR10 | 8 | 8 | 0 | 0 |
+| **Total** | **FR8-FR10** | **24** | **24** | **0** | **0** |
 
 ---
 
@@ -52,7 +52,7 @@ The evaluation uses the targets defined for the SmartShop AI project:
 
 ## 5. FR8 Catalogue Q&A Results
 
-All eight planned FR8 catalogue Q&A evaluation cases were executed successfully.
+All eight planned FR8 Catalogue Q&A evaluation cases were executed successfully.
 
 | ID | Evaluation Focus | Result | Response Time |
 |---|---|---|---:|
@@ -73,7 +73,7 @@ The assistant correctly used catalogue-grounded product information for prices, 
 
 Screenshot evidence was captured during frontend testing.
 
-A minor presentation issue was observed where Markdown formatting characters such as ** were displayed as plain text in some longer AI responses. This did not affect catalogue grounding or response accuracy and can be addressed as a frontend presentation improvement.
+A minor presentation issue was observed where Markdown formatting characters such as `**` were displayed as plain text in some longer AI responses. This did not affect catalogue grounding or response accuracy and can be addressed as a frontend presentation improvement.
 
 ---
 
@@ -124,25 +124,60 @@ The recommendation service is also instructed to use only the supplied SmartShop
 
 ---
 
-## 8. AI Service Failure Handling
+## 8. FR10 Review Summary Results
 
-During FR9 testing, the external AI service temporarily returned a 503 UNAVAILABLE response because the model was experiencing high demand.
+All eight planned FR10 AI Customer Review Summary evaluation cases were executed successfully against approved review data stored in the SmartShop database.
 
-SmartShop handled the external service failure and returned the controlled fallback message:
+| ID | Evaluation Focus | Result | Response Time |
+|---|---|---|---:|
+| FR10-AI-01 | Positive feedback | Pass | 5.788 s |
+| FR10-AI-02 | Negative feedback and concerns | Pass | 26.927 s |
+| FR10-AI-03 | Mixed feedback | Pass | 11.069 s |
+| FR10-AI-04 | Recurring themes | Pass | 5.788 s |
+| FR10-AI-05 | Limited evidence | Pass | 5.778 s |
+| FR10-AI-06 | No review data | Pass | 0 s |
+| FR10-AI-07 | Unsupported claims | Pass | Not separately timed |
+| FR10-AI-08 | Faithfulness to differing opinions | Pass | Not separately timed |
 
-"AI recommendations are currently unavailable. Please browse the product catalogue."
+The review-summary feature successfully used approved customer reviews as its source information.
 
-This demonstrates controlled fallback behaviour when the external AI service is temporarily unavailable.
+Testing demonstrated that the feature could identify recurring positive feedback, recurring concerns, mixed customer opinions and recurring themes without introducing unsupported product information.
+
+The HP Pavilion 15 test represented both positive performance feedback and individual concerns relating to battery life and portability.
+
+The Logitech K380 Keyboard test correctly identified compact size and portability as recurring positive themes.
+
+The Anker 65W USB-C Charger test demonstrated cautious handling of limited evidence by explicitly identifying that the summary was based on a single customer review.
+
+The Samsung Galaxy Tab A9 no-review test returned a controlled response stating that there was insufficient approved review information to generate a meaningful summary. The external AI service was not called for this case.
+
+The JBL Tune 520BT Headphones test correctly identified discomfort during extended use as a recurring concern across three negative reviews without inventing additional problems.
+
+All eight FR10 functional evaluation cases passed.
+
+Some FR10 responses exceeded the project's 10-second response-time target. This is recorded as a performance observation rather than a functional failure because the generated summaries remained faithful to their source reviews.
 
 ---
 
-## 9. FR10 Status
+## 9. AI Service Failure Handling
 
-FR10 - Review Summaries has eight prepared evaluation cases.
+Controlled fallback behaviour was observed during both FR9 and FR10 testing.
 
-These cases have not yet been executed because FR10 implementation and integration are still pending.
+During FR9 testing, the external AI service temporarily returned a 503 UNAVAILABLE response because the model was experiencing high demand.
 
-The existing `review-summary-evaluation.md` file will be used when FR10 is implemented.
+SmartShop returned the controlled fallback message:
+
+"AI recommendations are currently unavailable. Please browse the product catalogue."
+
+During FR10 testing, the external AI service temporarily returned a quota/rate-limit error.
+
+SmartShop returned the controlled fallback message:
+
+"AI review summaries are currently unavailable. Please read the customer reviews directly."
+
+Testing continued successfully once the external service became available again.
+
+These results demonstrate that SmartShop provides controlled responses when the external AI service is temporarily unavailable.
 
 ---
 
@@ -152,9 +187,13 @@ FR8 testing identified a minor frontend presentation issue involving raw Markdow
 
 During FR9 development, budget filtering was strengthened so that stated maximum budgets are enforced by the backend before catalogue products are supplied to the recommendation service.
 
-A temporary external AI service availability error was also observed during FR9 testing. The application's controlled fallback behaviour operated correctly.
+FR9 achieved the expected functional behaviour in all eight evaluation cases. Seven of the eight recorded responses were within 10 seconds.
 
-No unsupported product recommendation was identified in the final eight FR9 evaluation results.
+FR10 achieved the expected functional behaviour in all eight evaluation cases. The review-summary feature remained grounded in approved source reviews and did not introduce unsupported warranty or product claims during the evaluated cases.
+
+FR10 response times varied. Some external AI responses exceeded the project's 10-second target, including the HP Pavilion 15 response at 11.069 seconds and the JBL Tune 520BT Headphones response at 26.927 seconds.
+
+Temporary external AI availability and quota errors were also observed during testing. The application's controlled fallback behaviour operated correctly.
 
 ---
 
@@ -164,10 +203,12 @@ No unsupported product recommendation was identified in the final eight FR9 eval
 
 **FR9: Implemented and Evaluated - 8/8 Passed**
 
-**FR10: Prepared - Not Run**
+**FR10: Implemented and Evaluated - 8/8 Functional Cases Passed**
 
 A total of 24 AI evaluation cases are defined across FR8-FR10.
 
-Sixteen cases have now been executed across FR8 and FR9, with all 16 producing the expected functional results.
+All 24 cases have now been executed and produced the expected functional results.
 
-The remaining eight FR10 evaluation cases will be executed after the Review Summaries feature is implemented.
+The SmartShop AI features successfully demonstrated catalogue-grounded Q&A, catalogue-based guided recommendations and source-grounded customer review summaries.
+
+Response-time performance remains an area for improvement because some FR9 and FR10 AI responses exceeded the project's 10-second response-time target.

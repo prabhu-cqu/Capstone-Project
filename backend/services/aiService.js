@@ -41,7 +41,10 @@ ${question}
   return response.text;
 }
 
-async function generateProductRecommendation(customerRequest, catalogueContext) {
+async function generateProductRecommendation(
+  customerRequest,
+  catalogueContext
+) {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("Gemini API key is not configured.");
   }
@@ -86,7 +89,53 @@ ${catalogueContext}
   return response.text;
 }
 
+async function generateReviewSummary(productName, reviewContext) {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("Gemini API key is not configured.");
+  }
+
+  const prompt = `
+You are the SmartShop AI customer review summary assistant.
+
+Your job is to summarise approved customer reviews for the product named below.
+
+PRODUCT:
+${productName}
+
+APPROVED CUSTOMER REVIEWS:
+${reviewContext}
+
+RULES:
+- Use ONLY the approved customer reviews supplied above.
+- Do not invent customer opinions.
+- Do not invent product features, specifications, prices, warranty information,
+  compatibility information or other product details.
+- Identify recurring strengths only when they are supported by the supplied reviews.
+- Identify recurring concerns only when they are supported by the supplied reviews.
+- If reviews contain both positive and negative opinions, represent both fairly.
+- If customers express different opinions, preserve those differences rather than
+  presenting one opinion as a universal conclusion.
+- Do not exaggerate positive or negative feedback.
+- Do not change the meaning of the source reviews.
+- If only one approved review is supplied, clearly indicate that the summary is
+  based on limited customer feedback.
+- Do not claim that all customers agree unless the supplied reviews support that claim.
+- Keep the summary clear, concise and neutral.
+- The supplied approved reviews are the only authoritative source for this summary.
+
+Provide a concise customer review summary.
+`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3.6-flash",
+    contents: prompt,
+  });
+
+  return response.text;
+}
+
 module.exports = {
   generateCatalogueAnswer,
   generateProductRecommendation,
+  generateReviewSummary,
 };

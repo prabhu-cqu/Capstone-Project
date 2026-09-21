@@ -25,7 +25,7 @@ Development and testing are completed progressively as individual requirements a
 | FR7 | Customer order history | Should Have | Planned |
 | FR8 | AI catalogue product Q&A | Must Have | Implemented and Evaluated - Pass (8/8) |
 | FR9 | AI guided recommendations | Must Have | Implemented and Evaluated - Pass (8/8) |
-| FR10 | AI review summaries | Must Have | Planned |
+| FR10 | AI review summaries | Must Have | Implemented and Evaluated - Pass (8/8) |
 | FR11 | Admin catalogue management | Should Have | Planned |
 | FR12 | Admin review moderation | Should Have | Planned |
 | FR13 | Admin stock and order management | Should Have | Planned |
@@ -483,19 +483,81 @@ This means 87.5% of the recorded FR9 responses were returned within 10 seconds.
 **Implemented and Evaluated - Pass (8/8)**
 
 ---
-
 ## FR10 - AI Review Summaries
 
 ### Requirement
 
-The system shall provide AI-generated summaries of available product review information.
+The system shall provide AI-generated summaries of approved customer review information.
 
-The feature should summarise relevant review content without presenting unsupported product claims.
+The feature should summarise relevant review content without presenting unsupported product claims or customer opinions.
+
+### Current Implementation
+
+FR10 - AI Customer Review Summaries has been implemented.
+
+The current implementation integrates:
+
+`Product Request -> Express Backend -> MySQL Approved Reviews -> External AI Service`
+
+The review summary feature:
+
+- Retrieves approved customer reviews for the selected product from the SmartShop MySQL database.
+- Uses only approved reviews as source information for AI-generated summaries.
+- Identifies recurring strengths and positive customer feedback.
+- Identifies recurring concerns and limitations.
+- Represents mixed customer feedback where applicable.
+- Avoids introducing unsupported product information or customer opinions.
+- Returns the source reviews used to generate the summary.
+- Provides a controlled response when no approved reviews are available.
+- Provides controlled fallback behaviour when the external AI service is unavailable.
+- Records AI response time for evaluation.
+
+The backend endpoint for the review summary feature is:
+
+`GET /api/ai/reviews/:productId/summary`
+
+### Testing
+
+FR10 evaluation is documented in:
+
+`ai/evaluation/review-summary-evaluation.md`
+
+and the overall AI evaluation results are recorded in:
+
+`ai/evaluation/ai-evaluation-results.md`
+
+The following eight FR10 evaluation cases were executed:
+
+- FR10-AI-01 - Positive feedback
+- FR10-AI-02 - Negative feedback and concerns
+- FR10-AI-03 - Mixed feedback
+- FR10-AI-04 - Recurring themes
+- FR10-AI-05 - Limited evidence
+- FR10-AI-06 - No review data
+- FR10-AI-07 - Unsupported claims
+- FR10-AI-08 - Faithfulness to differing opinions
+
+All eight FR10 evaluation cases produced the expected functional behaviour.
+
+Testing confirmed that the review summary feature:
+
+- Used approved database reviews as source information.
+- Correctly identified recurring positive feedback.
+- Correctly identified recurring customer concerns.
+- Represented mixed customer feedback.
+- Handled a single approved review cautiously.
+- Returned an appropriate response when no approved reviews were available.
+- Did not introduce unsupported warranty information.
+- Preserved differing customer opinions without presenting an individual opinion as universal.
+- Returned source reviews with generated summaries for comparison and verification.
+
+Some external AI responses exceeded the project's 10-second response-time target. This is recorded as a performance observation and did not affect the functional correctness or source grounding of the evaluated summaries.
+
+During testing, the external AI service temporarily returned a quota/rate-limit error. The application returned its controlled fallback response and testing continued successfully when the service became available again.
 
 ### Status
 
-**Planned**
-
+**Implemented and Evaluated - Pass (8/8)**
 ---
 
 ## FR11 - Admin Catalogue Management
@@ -620,7 +682,7 @@ Source code and documentation should be maintained using Git and GitHub.
 | FR7 | Future testing | Planned |
 | FR8 | FR8-AI-01 to FR8-AI-08 | Implemented and Evaluated - Pass (8/8) |
 | FR9 | FR9-AI-01 to FR9-AI-08 | Implemented and Evaluated - Pass (8/8) |
-| FR10 | Future testing | Planned |
+| FR10 | FR10-AI-01 to FR10-AI-08 | Implemented and Evaluated - Pass (8/8) |
 | FR11 | Future testing | Planned |
 | FR12 | Future testing | Planned |
 | FR13 | Future testing | Planned |
@@ -650,6 +712,13 @@ The following major functionality is currently implemented:
 - Server-side recommendation budget filtering
 - Catalogue-grounded recommendation service
 - Controlled AI recommendation fallback handling
+- AI customer review summary backend
+- Approved-review retrieval from MySQL
+- Source-grounded AI review summarisation
+- Review summary source-review output
+- No-review controlled response handling
+- Controlled AI review-summary fallback handling
+
 Current formal testing includes:
 
 - FR1: 3 tests passed and 1 test remains Not Run
@@ -657,14 +726,14 @@ Current formal testing includes:
 - FR3: 3 tests passed
 - FR4: 9 tests passed
 - FR8: 8 AI evaluation cases passed
-Across the currently evaluated requirements, 37 tests have been executed and passed, with 1 catalogue test remaining Not Run.
+- FR9: 8 AI evaluation cases passed
+- FR10: 8 AI functional evaluation cases passed
+
+Across the currently evaluated requirements, 45  tests and AI evaluation cases have been executed and passed, with 1 catalogue test remaining Not Run.
 
 The next development and verification priorities include:
 
 - Complete TC-CAT-004 empty catalogue testing in a controlled test environment
 - Retest FR5 cart functionality
 - Retest FR6 simulated checkout
-
-
-- Develop review summarisation
 - Develop required administrator functionality
