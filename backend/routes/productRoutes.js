@@ -630,10 +630,34 @@ router.get("/:productId", async (req, res) => {
       });
     }
 
+// Retrieve approved customer reviews for this product
+const [reviews] = await pool.query(
+  `
+  SELECT
+    review_id AS reviewId,
+    rating,
+    review_text AS comment,
+    status,
+    review_date
+  FROM reviews
+  WHERE product_id = ?
+    AND status = 'approved'
+  ORDER BY review_date DESC, review_id DESC
+  `,
+  [productId]
+);
+
+// Add approved reviews to the product details response
+const product = {
+  ...products[0],
+  reviews
+};
+
+
     // Product found
     res.status(200).json({
       success: true,
-      data: products[0]
+      data: product
     });
   } catch (error) {
     console.error("Error retrieving product:", error.message);

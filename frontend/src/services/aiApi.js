@@ -52,3 +52,26 @@ export async function getProductRecommendation(customerRequest) {
 
   return result;
 }
+
+// ============================================================
+// FR10 - AI Customer Review Summaries
+// ============================================================
+
+export async function getReviewSummary(productId) {
+  const response = await fetch(
+    `${API_BASE_URL}/ai/reviews/${productId}/summary`,
+    {
+      method: "GET",
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.message || "AI review summary is currently unavailable."
+    );
+  }
+
+  return result;
+}
