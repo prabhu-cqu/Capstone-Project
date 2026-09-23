@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import ProductFilterPanel from "../components/catalogue/ProductFilterPanel";
 import ProductGrid from "../components/catalogue/ProductGrid";
 import CatalogueAssistant from "../components/ai/CatalogueAssistant";
+import GuidedRecommendation from "../components/ai/GuidedRecommendation";
 import { getProducts } from "../services/productApi";
-
 
 const initialFilters = {
   searchText: "",
@@ -193,7 +193,7 @@ function ProductCataloguePage({
         </p>
       </header>
       <CatalogueAssistant />
-
+      <GuidedRecommendation />
       {loading && (
         <p role="status">
           Loading products from the SmartShop AI database...
