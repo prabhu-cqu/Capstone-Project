@@ -19,11 +19,13 @@ function ProductCataloguePage({
   onAddToCart,
   cartItemCount,
   onOpenCart,
+  onOpenOrders,
   currentUser,
   onOpenAuth,
   onLogout,
   refreshKey,
 }) {
+
   const [filters, setFilters] = useState(initialFilters);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -164,18 +166,26 @@ function ProductCataloguePage({
             🛒 Cart ({cartItemCount})
           </button>
 
-          {currentUser ? (
-            <div className="catalogue-user">
-              <span>Welcome, {currentUser.full_name}</span>
+         {currentUser ? (
+  <div className="catalogue-user">
+    <span>Welcome, {currentUser.full_name}</span>
 
-              <button
-                type="button"
-                className="catalogue-auth-button"
-                onClick={onLogout}
-              >
-                Logout
-              </button>
-            </div>
+    <button
+      type="button"
+      className="catalogue-auth-button"
+      onClick={onOpenOrders}
+    >
+      My Orders
+    </button>
+
+    <button
+      type="button"
+      className="catalogue-auth-button"
+      onClick={onLogout}
+    >
+      Logout
+    </button>
+  </div>
           ) : (
             <button
               type="button"

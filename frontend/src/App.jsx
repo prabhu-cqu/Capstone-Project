@@ -4,6 +4,7 @@ import ProductDetailsPage from "./pages/ProductDetailsPage";
 import CartPanel from "./components/cart/CartPanel";
 import AuthPanel from "./components/auth/AuthPanel";
 import CheckoutPanel from "./components/orders/CheckoutPanel";
+import OrderHistory from "./components/orders/OrderHistory/OrderHistory";
 import { getProductById } from "./services/productApi";
 import {
   addCartItem,
@@ -31,6 +32,7 @@ function App() {
   const [cartError, setCartError] = useState("");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
   const [checkoutSubmitting, setCheckoutSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [catalogueRefreshKey, setCatalogueRefreshKey] = useState(0);
@@ -141,6 +143,16 @@ function App() {
     setCartError("");
     setIsCartOpen(true);
   }
+
+function openOrderHistory() {
+  if (!currentUser) {
+    setIsAuthOpen(true);
+    return;
+  }
+
+  setIsOrderHistoryOpen(true);
+}
+
 
   async function addToCart(product) {
     if (!currentUser) {
@@ -330,6 +342,12 @@ function App() {
     />
   ) : null;
 
+  const orderHistoryPanel = isOrderHistoryOpen ? (
+  <OrderHistory
+    onClose={() => setIsOrderHistoryOpen(false)}
+  />
+) : null;
+
   if (selectedProductId !== null) {
     if (loading) {
       return (
@@ -376,15 +394,17 @@ function App() {
         onAddToCart={addToCart}
         cartItemCount={cartItemCount}
         onOpenCart={openCart}
+        onOpenOrders={openOrderHistory}
         currentUser={currentUser}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={logout}
         refreshKey={catalogueRefreshKey}
       />
 
-      {cartPanel}
-      {authPanel}
-      {checkoutPanel}
+    {cartPanel}
+    {authPanel}
+    {checkoutPanel}
+    {orderHistoryPanel}
     </>
   );
 }
