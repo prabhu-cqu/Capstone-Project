@@ -60,3 +60,95 @@ export async function getProductById(productId) {
 
   return response.json();
 }
+
+// Get authentication token
+function getAuthToken() {
+  return localStorage.getItem("smartshop-token");
+}
+
+// Create a new product - Admin only
+export async function createProduct(productData) {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}/products`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to create product");
+  }
+
+  return result;
+}
+
+// Update a product - Admin only
+export async function updateProduct(productId, productData) {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(productData),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to update product");
+  }
+
+  return result;
+}
+
+// Delete a product - Admin only
+export async function deleteProduct(productId) {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}/products/${productId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to delete product");
+  }
+
+  return result;
+}
+
+export async function uploadProductImage(imageFile) {
+  const token = getAuthToken();
+
+  const formData = new FormData();
+  formData.append("image", imageFile);
+
+  const response = await fetch(`${API_BASE_URL}/uploads/product-image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to upload product image");
+  }
+
+  return data;
+}

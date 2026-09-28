@@ -5,6 +5,7 @@ import CartPanel from "./components/cart/CartPanel";
 import AuthPanel from "./components/auth/AuthPanel";
 import CheckoutPanel from "./components/orders/CheckoutPanel";
 import OrderHistory from "./components/orders/OrderHistory/OrderHistory";
+import AdminProductManagement from "./components/admin/AdminProductManagement/AdminProductManagement";
 import { getProductById } from "./services/productApi";
 import {
   addCartItem,
@@ -386,7 +387,13 @@ function openOrderHistory() {
       </>
     );
   }
-
+  if (currentUser?.role === "admin") {
+    return (
+      <AdminProductManagement
+        onClose={logout}
+      />
+    );
+  }
   return (
     <>
       <ProductCataloguePage
@@ -400,6 +407,7 @@ function openOrderHistory() {
         onLogout={logout}
         refreshKey={catalogueRefreshKey}
       />
+
 
     {cartPanel}
     {authPanel}

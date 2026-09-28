@@ -2,13 +2,17 @@ const express = require("express");
 const pool = require("../config/db");
 
 const router = express.Router();
+
 const {
   authenticateToken,
-  requireAdmin
+  requireAdmin,
 } = require("../middleware/authMiddleware");
 
+// ============================================================
 // GET /api/products
 // Retrieve active products with optional filtering and sorting
+// ============================================================
+
 router.get("/", async (req, res) => {
   try {
     const { category, minPrice, maxPrice, sort } = req.query;
@@ -42,7 +46,7 @@ router.get("/", async (req, res) => {
       if (!Number.isInteger(categoryId) || categoryId <= 0) {
         return res.status(400).json({
           success: false,
-          message: "Category must be a positive integer"
+          message: "Category must be a positive integer",
         });
       }
 
@@ -57,7 +61,7 @@ router.get("/", async (req, res) => {
       if (!Number.isFinite(minimumPrice) || minimumPrice < 0) {
         return res.status(400).json({
           success: false,
-          message: "minPrice must be a valid non-negative number"
+          message: "minPrice must be a valid non-negative number",
         });
       }
 
@@ -72,7 +76,7 @@ router.get("/", async (req, res) => {
       if (!Number.isFinite(maximumPrice) || maximumPrice < 0) {
         return res.status(400).json({
           success: false,
-          message: "maxPrice must be a valid non-negative number"
+          message: "maxPrice must be a valid non-negative number",
         });
       }
 
@@ -80,12 +84,11 @@ router.get("/", async (req, res) => {
       queryParams.push(maximumPrice);
     }
 
-    // Validate that minimum price is not greater than maximum price
     if (minPrice !== undefined && maxPrice !== undefined) {
       if (Number(minPrice) > Number(maxPrice)) {
         return res.status(400).json({
           success: false,
-          message: "minPrice cannot be greater than maxPrice"
+          message: "minPrice cannot be greater than maxPrice",
         });
       }
     }
@@ -117,7 +120,7 @@ router.get("/", async (req, res) => {
         return res.status(400).json({
           success: false,
           message:
-            "Invalid sort option. Use price_asc, price_desc, name_asc, name_desc, or newest"
+            "Invalid sort option. Use price_asc, price_desc, name_asc, name_desc, or newest",
         });
     }
 
@@ -130,22 +133,25 @@ router.get("/", async (req, res) => {
         category: category || null,
         minPrice: minPrice || null,
         maxPrice: maxPrice || null,
-        sort: sort || "newest"
+        sort: sort || "newest",
       },
-      data: products
+      data: products,
     });
   } catch (error) {
     console.error("Error retrieving filtered products:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to retrieve products"
+      message: "Failed to retrieve products",
     });
   }
 });
 
+// ============================================================
 // GET /api/products/search?q=keyword
 // Search active products by name or description
+// ============================================================
+
 router.get("/search", async (req, res) => {
   try {
     const keyword = req.query.q?.trim();
@@ -153,7 +159,7 @@ router.get("/search", async (req, res) => {
     if (!keyword) {
       return res.status(400).json({
         success: false,
-        message: "Search keyword is required"
+        message: "Search keyword is required",
       });
     }
 
@@ -161,27 +167,28 @@ router.get("/search", async (req, res) => {
 
     const [products] = await pool.query(
       `
-      SELECT
-        p.product_id,
-        p.name,
-        p.description,
-        p.price,
-        p.stock,
-        p.specifications,
-        p.status,
-        p.created_at,
-        p.updated_at,
-        c.category_id,
-        c.name AS category_name
-      FROM products p
-      INNER JOIN categories c
-        ON p.category_id = c.category_id
-      WHERE p.status = 'active'
-        AND (
-          p.name LIKE ?
-          OR p.description LIKE ?
-        )
-      ORDER BY p.created_at DESC
+        SELECT
+          p.product_id,
+          p.name,
+          p.description,
+          p.image_url AS imageUrl,
+          p.price,
+          p.stock,
+          p.specifications,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          c.category_id,
+          c.name AS category_name
+        FROM products p
+        INNER JOIN categories c
+          ON p.category_id = c.category_id
+        WHERE p.status = 'active'
+          AND (
+            p.name LIKE ?
+            OR p.description LIKE ?
+          )
+        ORDER BY p.created_at DESC
       `,
       [searchTerm, searchTerm]
     );
@@ -189,482 +196,567 @@ router.get("/search", async (req, res) => {
     res.status(200).json({
       success: true,
       count: products.length,
-      data: products
+      data: products,
     });
   } catch (error) {
     console.error("Error searching products:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to search products"
+      message: "Failed to search products",
     });
   }
 });
 
+// ============================================================
 // POST /api/products
-// Create a new product
+// Create a new product - ADMIN ONLY
+// Category is supplied using category_name.
+// Existing category is reused; new category is created automatically.
+// ============================================================
+
 router.post(
   "/",
   authenticateToken,
   requireAdmin,
   async (req, res) => {
-  try {
-    const {
-      name,
-      description,
-      price,
-      stock,
-      category_id,
-      specifications
-    } = req.body;
+    try {
+      const {
+        name,
+        description,
+        price,
+        stock,
+        category_name,
+        specifications,
+        image_url,
+      } = req.body;
 
-    // Validate required fields
-    if (
-      !name ||
-      price === undefined ||
-      stock === undefined ||
-      category_id === undefined
-    ) {
-      return res.status(400).json({
+      // Required fields
+      if (
+        !name ||
+        price === undefined ||
+        stock === undefined ||
+        !category_name
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "name, price, stock, and category_name are required",
+        });
+      }
+
+      // Product name
+      if (typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Product name must be a non-empty string",
+        });
+      }
+
+      // Price
+      const productPrice = Number(price);
+
+      if (!Number.isFinite(productPrice) || productPrice < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Price must be a valid non-negative number",
+        });
+      }
+
+      // Stock
+      const productStock = Number(stock);
+
+      if (!Number.isInteger(productStock) || productStock < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Stock must be a non-negative integer",
+        });
+      }
+
+      // Category name
+      if (typeof category_name !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Category name must be a string",
+        });
+      }
+
+      const cleanCategoryName = category_name.trim();
+
+      if (!cleanCategoryName) {
+        return res.status(400).json({
+          success: false,
+          message: "Category name is required",
+        });
+      }
+
+      // Find category by name
+      let [categories] = await pool.query(
+        `
+          SELECT category_id
+          FROM categories
+          WHERE LOWER(name) = LOWER(?)
+          LIMIT 1
+        `,
+        [cleanCategoryName]
+      );
+
+      let categoryId;
+
+      if (categories.length > 0) {
+        categoryId = categories[0].category_id;
+      } else {
+        // Automatically create new category
+        const [categoryResult] = await pool.query(
+          `
+            INSERT INTO categories (name, status)
+            VALUES (?, 'active')
+          `,
+          [cleanCategoryName]
+        );
+
+        categoryId = categoryResult.insertId;
+      }
+
+      // Specifications
+      const productSpecifications = specifications || {};
+
+      if (
+        typeof productSpecifications !== "object" ||
+        Array.isArray(productSpecifications) ||
+        productSpecifications === null
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Specifications must be a JSON object",
+        });
+      }
+
+      // Insert product
+      const [result] = await pool.query(
+        `
+          INSERT INTO products
+            (
+              name,
+              description,
+              price,
+              stock,
+              category_id,
+              specifications,
+              image_url,
+              status
+            )
+          VALUES (?, ?, ?, ?, ?, ?, ?, 'active')
+        `,
+        [
+          name.trim(),
+          description || null,
+          productPrice,
+          productStock,
+          categoryId,
+          JSON.stringify(productSpecifications),
+          image_url || null,
+        ]
+      );
+
+      // Return created product
+      const [products] = await pool.query(
+        `
+          SELECT
+            p.product_id,
+            p.name,
+            p.description,
+            p.image_url AS imageUrl,
+            p.price,
+            p.stock,
+            p.specifications,
+            p.status,
+            p.created_at,
+            p.updated_at,
+            c.category_id,
+            c.name AS category_name
+          FROM products p
+          INNER JOIN categories c
+            ON p.category_id = c.category_id
+          WHERE p.product_id = ?
+          LIMIT 1
+        `,
+        [result.insertId]
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Product created successfully",
+        data: products[0],
+      });
+    } catch (error) {
+      console.error("Error creating product:", error.message);
+
+      res.status(500).json({
         success: false,
-        message:
-          "name, price, stock, and category_id are required"
+        message: "Failed to create product",
       });
     }
-
-    // Validate product name
-    if (typeof name !== "string" || name.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Product name must be a non-empty string"
-      });
-    }
-
-    // Validate price
-    const productPrice = Number(price);
-
-    if (!Number.isFinite(productPrice) || productPrice < 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Price must be a valid non-negative number"
-      });
-    }
-
-    // Validate stock
-    const productStock = Number(stock);
-
-    if (
-      !Number.isInteger(productStock) ||
-      productStock < 0
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Stock must be a non-negative integer"
-      });
-    }
-
-    // Validate category ID
-    const categoryId = Number.parseInt(category_id, 10);
-
-    if (!Number.isInteger(categoryId) || categoryId <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "category_id must be a positive integer"
-      });
-    }
-
-    // Check that the category exists
-    const [categories] = await pool.query(
-      "SELECT category_id FROM categories WHERE category_id = ? LIMIT 1",
-      [categoryId]
-    );
-
-    if (categories.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Category not found"
-      });
-    }
-
-    // Convert specifications to JSON
-    let productSpecifications = specifications || {};
-
-    if (
-      typeof productSpecifications !== "object" ||
-      Array.isArray(productSpecifications) ||
-      productSpecifications === null
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Specifications must be a JSON object"
-      });
-    }
-
-    // Insert the new product
-    const [result] = await pool.query(
-      `
-      INSERT INTO products
-        (name, description, price, stock, category_id, specifications, status)
-      VALUES (?, ?, ?, ?, ?, ?, 'active')
-      `,
-      [
-        name.trim(),
-        description || null,
-        productPrice,
-        productStock,
-        categoryId,
-        JSON.stringify(productSpecifications)
-      ]
-    );
-
-    // Retrieve the newly created product
-    const [products] = await pool.query(
-      `
-      SELECT
-        p.product_id,
-        p.name,
-        p.description,
-        p.price,
-        p.stock,
-        p.specifications,
-        p.status,
-        p.created_at,
-        p.updated_at,
-        c.category_id,
-        c.name AS category_name
-      FROM products p
-      INNER JOIN categories c
-        ON p.category_id = c.category_id
-      WHERE p.product_id = ?
-      LIMIT 1
-      `,
-      [result.insertId]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Product created successfully",
-      data: products[0]
-    });
-  } catch (error) {
-    console.error("Error creating product:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to create product"
-    });
   }
-});
+);
 
+// ============================================================
 // PUT /api/products/:productId
-// Update an existing product
+// Update an existing product - ADMIN ONLY
+// ============================================================
+
 router.put(
   "/:productId",
   authenticateToken,
   requireAdmin,
   async (req, res) => {
-  try {
-    const productId = Number.parseInt(req.params.productId, 10);
+    try {
+      const productId = Number.parseInt(req.params.productId, 10);
 
-    if (!Number.isInteger(productId) || productId <= 0) {
-      return res.status(400).json({
+      if (!Number.isInteger(productId) || productId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Product ID must be a positive integer",
+        });
+      }
+
+      // IMPORTANT:
+      // Read request body BEFORE using stock, price or category_name.
+      const {
+        name,
+        description,
+        price,
+        stock,
+        category_name,
+        specifications,
+        image_url,
+        status,
+      } = req.body;
+
+      // Required fields
+      if (
+        !name ||
+        price === undefined ||
+        stock === undefined ||
+        !category_name
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "name, price, stock, and category_name are required",
+        });
+      }
+
+      // Check product exists before updating
+      const [existingProducts] = await pool.query(
+        "SELECT product_id FROM products WHERE product_id = ? LIMIT 1",
+        [productId]
+      );
+
+      if (existingProducts.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      // Product name
+      if (typeof name !== "string" || name.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Product name must be a non-empty string",
+        });
+      }
+
+      // Price
+      const productPrice = Number(price);
+
+      if (!Number.isFinite(productPrice) || productPrice < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Price must be a valid non-negative number",
+        });
+      }
+
+      // Stock - AFTER req.body destructuring
+      const productStock = Number(stock);
+
+      if (!Number.isInteger(productStock) || productStock < 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Stock must be a non-negative integer",
+        });
+      }
+
+      // Category name
+      if (typeof category_name !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: "Category name must be a string",
+        });
+      }
+
+      const cleanCategoryName = category_name.trim();
+
+      if (!cleanCategoryName) {
+        return res.status(400).json({
+          success: false,
+          message: "Category name is required",
+        });
+      }
+
+      // Find existing category or create a new one
+      let [categories] = await pool.query(
+        `
+          SELECT category_id
+          FROM categories
+          WHERE LOWER(name) = LOWER(?)
+          LIMIT 1
+        `,
+        [cleanCategoryName]
+      );
+
+      let categoryId;
+
+      if (categories.length > 0) {
+        categoryId = categories[0].category_id;
+      } else {
+        const [categoryResult] = await pool.query(
+          `
+            INSERT INTO categories (name, status)
+            VALUES (?, 'active')
+          `,
+          [cleanCategoryName]
+        );
+
+        categoryId = categoryResult.insertId;
+      }
+
+      // Specifications
+      const productSpecifications = specifications || {};
+
+      if (
+        typeof productSpecifications !== "object" ||
+        Array.isArray(productSpecifications) ||
+        productSpecifications === null
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Specifications must be a JSON object",
+        });
+      }
+
+      // Status
+      const validStatuses = ["active", "inactive"];
+
+      if (status !== undefined && !validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Status must be either active or inactive",
+        });
+      }
+
+      // Update product
+      await pool.query(
+        `
+          UPDATE products
+          SET
+            name = ?,
+            description = ?,
+            price = ?,
+            stock = ?,
+            category_id = ?,
+            specifications = ?,
+            image_url = COALESCE(?, image_url),
+            status = COALESCE(?, status),
+            updated_at = CURRENT_TIMESTAMP
+          WHERE product_id = ?
+        `,
+        [
+          name.trim(),
+          description || null,
+          productPrice,
+          productStock,
+          categoryId,
+          JSON.stringify(productSpecifications),
+          image_url || null,
+          status || null,
+          productId,
+        ]
+      );
+
+      // Return updated product
+      const [products] = await pool.query(
+        `
+          SELECT
+            p.product_id,
+            p.name,
+            p.description,
+            p.image_url AS imageUrl,
+            p.price,
+            p.stock,
+            p.specifications,
+            p.status,
+            p.created_at,
+            p.updated_at,
+            c.category_id,
+            c.name AS category_name
+          FROM products p
+          INNER JOIN categories c
+            ON p.category_id = c.category_id
+          WHERE p.product_id = ?
+          LIMIT 1
+        `,
+        [productId]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Product updated successfully",
+        data: products[0],
+      });
+    } catch (error) {
+      console.error("Error updating product:", error.message);
+
+      res.status(500).json({
         success: false,
-        message: "Product ID must be a positive integer"
+        message: "Failed to update product",
       });
     }
-
-    const {
-      name,
-      description,
-      price,
-      stock,
-      category_id,
-      specifications,
-      status
-    } = req.body;
-
-    if (!name || price === undefined || stock === undefined || category_id === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: "name, price, stock, and category_id are required"
-      });
-    }
-
-    if (typeof name !== "string" || name.trim().length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Product name must be a non-empty string"
-      });
-    }
-
-    const productPrice = Number(price);
-
-    if (!Number.isFinite(productPrice) || productPrice < 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Price must be a valid non-negative number"
-      });
-    }
-
-    const productStock = Number(stock);
-
-    if (!Number.isInteger(productStock) || productStock < 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Stock must be a non-negative integer"
-      });
-    }
-
-    const categoryId = Number.parseInt(category_id, 10);
-
-    if (!Number.isInteger(categoryId) || categoryId <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "category_id must be a positive integer"
-      });
-    }
-
-    const [existingProducts] = await pool.query(
-      "SELECT product_id FROM products WHERE product_id = ? LIMIT 1",
-      [productId]
-    );
-
-    if (existingProducts.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found"
-      });
-    }
-
-    const [categories] = await pool.query(
-      "SELECT category_id FROM categories WHERE category_id = ? LIMIT 1",
-      [categoryId]
-    );
-
-    if (categories.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Category not found"
-      });
-    }
-
-    let productSpecifications = specifications || {};
-
-    if (
-      typeof productSpecifications !== "object" ||
-      Array.isArray(productSpecifications) ||
-      productSpecifications === null
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: "Specifications must be a JSON object"
-      });
-    }
-
-    const validStatuses = ["active", "inactive"];
-
-    if (status !== undefined && !validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Status must be either active or inactive"
-      });
-    }
-
-    await pool.query(
-      `
-      UPDATE products
-      SET
-        name = ?,
-        description = ?,
-        price = ?,
-        stock = ?,
-        category_id = ?,
-        specifications = ?,
-        status = COALESCE(?, status),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE product_id = ?
-      `,
-      [
-        name.trim(),
-        description || null,
-        productPrice,
-        productStock,
-        categoryId,
-        JSON.stringify(productSpecifications),
-        status || null,
-        productId
-      ]
-    );
-
-    const [products] = await pool.query(
-      `
-      SELECT
-        p.product_id,
-        p.name,
-        p.description,
-        p.price,
-        p.stock,
-        p.specifications,
-        p.status,
-        p.created_at,
-        p.updated_at,
-        c.category_id,
-        c.name AS category_name
-      FROM products p
-      INNER JOIN categories c
-        ON p.category_id = c.category_id
-      WHERE p.product_id = ?
-      LIMIT 1
-      `,
-      [productId]
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "Product updated successfully",
-      data: products[0]
-    });
-  } catch (error) {
-    console.error("Error updating product:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to update product"
-    });
   }
-});
+);
+
+// ============================================================
 // DELETE /api/products/:productId
-// Delete an existing product
+// Delete an existing product - ADMIN ONLY
+// ============================================================
+
 router.delete(
   "/:productId",
   authenticateToken,
   requireAdmin,
   async (req, res) => {
-  try {
-    const productId = Number.parseInt(req.params.productId, 10);
+    try {
+      const productId = Number.parseInt(req.params.productId, 10);
 
-    if (!Number.isInteger(productId) || productId <= 0) {
-      return res.status(400).json({
+      if (!Number.isInteger(productId) || productId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Product ID must be a positive integer",
+        });
+      }
+
+      const [existingProducts] = await pool.query(
+        "SELECT product_id FROM products WHERE product_id = ? LIMIT 1",
+        [productId]
+      );
+
+      if (existingProducts.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Product not found",
+        });
+      }
+
+      await pool.query(
+        "DELETE FROM products WHERE product_id = ?",
+        [productId]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Product deleted successfully",
+        product_id: productId,
+      });
+    } catch (error) {
+      console.error("Error deleting product:", error.message);
+
+      res.status(500).json({
         success: false,
-        message: "Product ID must be a positive integer"
+        message: "Failed to delete product",
       });
     }
-
-    const [existingProducts] = await pool.query(
-      "SELECT product_id FROM products WHERE product_id = ? LIMIT 1",
-      [productId]
-    );
-
-    if (existingProducts.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Product not found"
-      });
-    }
-
-    await pool.query(
-      "DELETE FROM products WHERE product_id = ?",
-      [productId]
-    );
-
-    res.status(200).json({
-      success: true,
-      message: "Product deleted successfully",
-      product_id: productId
-    });
-  } catch (error) {
-    console.error("Error deleting product:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to delete product"
-    });
   }
-});
+);
 
+// ============================================================
 // GET /api/products/:productId
-// Retrieve one active product by ID
+// Retrieve one active product and its approved reviews
+// ============================================================
+
 router.get("/:productId", async (req, res) => {
   try {
     const productId = Number.parseInt(req.params.productId, 10);
 
-    // Validate product ID
     if (!Number.isInteger(productId) || productId <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Product ID must be a positive integer"
+        message: "Product ID must be a positive integer",
       });
     }
 
-    // Retrieve product using a parameterized query
     const [products] = await pool.query(
       `
-      SELECT
-        p.product_id,
-        p.name,
-        p.description,
-        p.image_url AS imageUrl,
-        p.price,
-        p.stock,
-        p.specifications,
-        p.status,
-        p.created_at,
-        p.updated_at,
-        c.category_id,
-        c.name AS category_name
-      FROM products p
-      INNER JOIN categories c
-        ON p.category_id = c.category_id
-      WHERE p.product_id = ?
-        AND p.status = 'active'
-      LIMIT 1
+        SELECT
+          p.product_id,
+          p.name,
+          p.description,
+          p.image_url AS imageUrl,
+          p.price,
+          p.stock,
+          p.specifications,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          c.category_id,
+          c.name AS category_name
+        FROM products p
+        INNER JOIN categories c
+          ON p.category_id = c.category_id
+        WHERE p.product_id = ?
+          AND p.status = 'active'
+        LIMIT 1
       `,
       [productId]
     );
 
-    // Product does not exist
     if (products.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Product not found"
+        message: "Product not found",
       });
     }
 
-// Retrieve approved customer reviews for this product
-const [reviews] = await pool.query(
-  `
-  SELECT
-    review_id AS reviewId,
-    rating,
-    review_text AS comment,
-    status,
-    review_date
-  FROM reviews
-  WHERE product_id = ?
-    AND status = 'approved'
-  ORDER BY review_date DESC, review_id DESC
-  `,
-  [productId]
-);
+    // Retrieve approved reviews
+    const [reviews] = await pool.query(
+      `
+        SELECT
+          review_id AS reviewId,
+          rating,
+          review_text AS comment,
+          status,
+          review_date
+        FROM reviews
+        WHERE product_id = ?
+          AND status = 'approved'
+        ORDER BY review_date DESC, review_id DESC
+      `,
+      [productId]
+    );
 
-// Add approved reviews to the product details response
-const product = {
-  ...products[0],
-  reviews
-};
+    const product = {
+      ...products[0],
+      reviews,
+    };
 
-
-    // Product found
     res.status(200).json({
       success: true,
-      data: product
+      data: product,
     });
   } catch (error) {
     console.error("Error retrieving product:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to retrieve product"
+      message: "Failed to retrieve product",
     });
   }
 });
