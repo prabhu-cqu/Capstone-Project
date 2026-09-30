@@ -130,25 +130,48 @@ export async function deleteProduct(productId) {
   return result;
 }
 
+export async function getAdminProducts() {
+  const token = getAuthToken();
+
+  const response = await fetch(`${API_BASE_URL}/products/admin/all`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to load admin products.");
+  }
+
+  return result;
+}
+// Upload product image - Admin only
 export async function uploadProductImage(imageFile) {
   const token = getAuthToken();
 
   const formData = new FormData();
   formData.append("image", imageFile);
 
-  const response = await fetch(`${API_BASE_URL}/uploads/product-image`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: formData,
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/uploads/product-image`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
 
-  const data = await response.json();
+  const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || "Unable to upload product image");
+    throw new Error(
+      result.message || "Failed to upload product image"
+    );
   }
 
-  return data;
+  return result;
 }

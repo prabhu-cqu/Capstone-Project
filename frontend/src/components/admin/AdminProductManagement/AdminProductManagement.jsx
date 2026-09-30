@@ -2,11 +2,23 @@ import { useEffect, useState } from "react";
 import {
   createProduct,
   deleteProduct,
-  getProducts,
+  getAdminProducts,
   updateProduct,
-uploadProductImage
+  uploadProductImage
 } from "../../../services/productApi";
 import "./AdminProductManagement.css";
+
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
+import {
+  faPenToSquare,
+  faToggleOn,
+  faToggleOff,
+  faTrashCan,
+  faCircleCheck,
+  faCircleMinus,
+} from "@fortawesome/free-solid-svg-icons";
+
 
 const emptyForm = {
   name: "",
@@ -20,13 +32,14 @@ const emptyForm = {
 
 export default function AdminProductManagement({ onClose }) {
   const [products, setProducts] = useState([]);
+ const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
-const [imageFile, setImageFile] = useState(null);
-const [imagePreview, setImagePreview] = useState("");
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [error, setError] = useState("");
 
   async function loadProducts() {
@@ -34,8 +47,7 @@ const [imagePreview, setImagePreview] = useState("");
       setLoading(true);
       setError("");
 
-      const result = await getProducts({ sort: "newest" });
-      setProducts(result.data || []);
+      const result = await getAdminProducts(); setProducts(result.data || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -57,11 +69,11 @@ const [imagePreview, setImagePreview] = useState("");
   }
 
   function resetForm() {
-  setForm(emptyForm);
-  setEditingId(null);
-  setImageFile(null);
-  setImagePreview("");
-}
+    setForm(emptyForm);
+    setEditingId(null);
+    setImageFile(null);
+    setImagePreview("");
+  }
 
   function startEdit(product) {
     let specifications = product.specifications || {};
@@ -76,15 +88,15 @@ const [imagePreview, setImagePreview] = useState("");
 
     setEditingId(product.product_id);
 
-   setForm({
-  name: product.name || "",
-  description: product.description || "",
-  price: product.price ?? "",
-  stock: product.stock ?? "",
-  category_name: product.category_name || "",
-  specifications: JSON.stringify(specifications, null, 2),
-  status: product.status || "active",
-});
+    setForm({
+      name: product.name || "",
+      description: product.description || "",
+      price: product.price ?? "",
+      stock: product.stock ?? "",
+      category_name: product.category_name || "",
+      specifications: JSON.stringify(specifications, null, 2),
+      status: product.status || "active",
+    });
 
     setMessage("");
     setError("");
@@ -108,44 +120,44 @@ const [imagePreview, setImagePreview] = useState("");
         throw new Error("Specifications must be valid JSON.");
       }
 
- let imageUrl = null;
+      let imageUrl = null;
 
-    if (imageFile) {
-      const uploadResult = await uploadProductImage(imageFile);
-      imageUrl = uploadResult.image_url;
+      if (imageFile) {
+        const uploadResult = await uploadProductImage(imageFile);
+        imageUrl = uploadResult.image_url;
+      }
+
+      const productData = {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        price: Number(form.price),
+        stock: Number(form.stock),
+        category_name: form.category_name.trim(),
+        specifications: parsedSpecifications,
+        status: form.status,
+        image_url: imageUrl,
+      };
+
+      if (editingId) {
+        await updateProduct(editingId, productData);
+        setMessage("Product updated successfully.");
+      } else {
+        await createProduct(productData);
+        setMessage("Product created successfully.");
+      }
+
+      resetForm();
+      await loadProducts();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
     }
-
-   const productData = {
-  name: form.name.trim(),
-  description: form.description.trim(),
-  price: Number(form.price),
-  stock: Number(form.stock),
-  category_name: form.category_name.trim(),
-  specifications: parsedSpecifications,
-  status: form.status,
-  image_url: imageUrl,
-};
-
-       if (editingId) {
-      await updateProduct(editingId, productData);
-      setMessage("Product updated successfully.");
-    } else {
-      await createProduct(productData);
-      setMessage("Product created successfully.");
-    }
-
-    resetForm();
-    await loadProducts();
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setSaving(false);
   }
-}
 
   async function handleDelete(product) {
     const confirmed = window.confirm(
-      `Delete "${product.name}" from the catalogue?`
+      `Permanently delete "${product.name}"?\n\nThis action cannot be undone.`
     );
 
     if (!confirmed) {
@@ -162,12 +174,63 @@ const [imagePreview, setImagePreview] = useState("");
         resetForm();
       }
 
-      setMessage("Product deleted successfully.");
+      setMessage("Product permanently deleted successfully."); await loadProducts();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function handleStatusChange(product) {
+    try {
+      setMessage("");
+      setError("");
+
+      let specifications = product.specifications || {};
+
+      if (typeof specifications === "string") {
+        try {
+          specifications = JSON.parse(specifications);
+        } catch {
+          specifications = {};
+        }
+      }
+
+      const newStatus =
+        product.status === "active" ? "inactive" : "active";
+
+      const productData = {
+        name: product.name,
+        description: product.description || "",
+        price: Number(product.price),
+        stock: Number(product.stock),
+        category_name: product.category_name,
+        specifications,
+        status: newStatus,
+        image_url: product.imageUrl || product.image_url || null,
+      };
+
+      await updateProduct(product.product_id, productData);
+
+      setMessage(
+        newStatus === "active"
+          ? `"${product.name}" is now active.`
+          : `"${product.name}" is now inactive (archived).`
+      );
+
       await loadProducts();
     } catch (err) {
       setError(err.message);
     }
   }
+
+const filteredProducts = products.filter((product) => {
+  if (statusFilter === "all") {
+    return true;
+  }
+
+  return product.status === statusFilter;
+});
+
 
   return (
     <div className="admin-products-overlay">
@@ -202,31 +265,31 @@ const [imagePreview, setImagePreview] = useState("");
             onSubmit={handleSubmit}
           >
 
-<div className="admin-field">
-  <label htmlFor="product-image">Product Image</label>
+            <div className="admin-field">
+              <label htmlFor="product-image">Product Image</label>
 
-  <input
-    id="product-image"
-    type="file"
-    accept="image/png,image/jpeg,image/webp"
-    onChange={(event) => {
-      const file = event.target.files?.[0];
+              <input
+                id="product-image"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
 
-      if (file) {
-        setImageFile(file);
-        setImagePreview(URL.createObjectURL(file));
-      }
-    }}
-  />
+                  if (file) {
+                    setImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
 
-  <small>JPG, PNG or WEBP. Maximum size: 5 MB.</small>
+              <small>JPG, PNG or WEBP. Maximum size: 5 MB.</small>
 
-  {imagePreview && (
-    <div className="admin-image-preview">
-      <img src={imagePreview} alt="Product preview" />
-    </div>
-  )}
-</div>
+              {imagePreview && (
+                <div className="admin-image-preview">
+                  <img src={imagePreview} alt="Product preview" />
+                </div>
+              )}
+            </div>
             <h3>{editingId ? "Edit Product" : "Add Product"}</h3>
 
             <label>
@@ -279,17 +342,17 @@ const [imagePreview, setImagePreview] = useState("");
 
             <div className="admin-form-row">
               <label>
-  Category Name
-  <input
-    name="category_name"
-    type="text"
-    value={form.category_name}
-    onChange={handleChange}
-    placeholder="e.g. Laptops, Audio, Gaming"
-    maxLength="100"
-    required
-  />
-</label>
+                Category Name
+                <input
+                  name="category_name"
+                  type="text"
+                  value={form.category_name}
+                  onChange={handleChange}
+                  placeholder="e.g. Laptops, Audio, Gaming"
+                  maxLength="100"
+                  required
+                />
+              </label>
 
               {editingId && (
                 <label>
@@ -340,56 +403,151 @@ const [imagePreview, setImagePreview] = useState("");
             </div>
           </form>
 
-          <div className="admin-product-list">
-            <div className="admin-product-list-heading">
-              <h3>Current Products</h3>
-              <span>{products.length} active products</span>
-            </div>
-
-            {loading ? (
-              <p>Loading products...</p>
-            ) : products.length === 0 ? (
-              <p>No active products found.</p>
-            ) : (
-              products.map((product) => (
-                <article
-                  className="admin-product-card"
-                  key={product.product_id}
-                >
-                  <div>
-                    <h4>{product.name}</h4>
-                    <p>
-                      ${Number(product.price).toFixed(2)}
-                      {" • "}
-                      Stock: {product.stock}
-                    </p>
-                    <small>
-                      Category: {product.category_name}
-                    </small>
-                  </div>
-
-                  <div className="admin-product-actions">
-                    <button
-                      type="button"
-                      onClick={() => startEdit(product)}
-                    >
-                      Edit
-                    </button>
-
-                    <button
-                      type="button"
-                      className="admin-delete-button"
-                      onClick={() => handleDelete(product)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
+         <div className="admin-product-list">
+  <div className="admin-product-list-heading">
+    <div>
+      <h3>Current Products</h3>
+      <p className="admin-product-list-description">
+        Manage product details, availability and catalogue status.
+      </p>
     </div>
-  );
+
+    <div className="admin-list-controls">
+      <span>{filteredProducts.length} products</span>
+
+      <div className="admin-status-filters">
+        <button
+          type="button"
+          className={statusFilter === "all" ? "active" : ""}
+          onClick={() => setStatusFilter("all")}
+        >
+          All
+        </button>
+
+        <button
+          type="button"
+          className={statusFilter === "active" ? "active" : ""}
+          onClick={() => setStatusFilter("active")}
+        >
+          Active
+        </button>
+
+        <button
+          type="button"
+          className={statusFilter === "inactive" ? "active" : ""}
+          onClick={() => setStatusFilter("inactive")}
+        >
+          Inactive
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {loading ? (
+    <p>Loading products...</p>
+  ) : filteredProducts.length === 0 ? (
+    <p className="admin-empty-products">
+      No products found for this status.
+    </p>
+  ) : (
+    <div className="admin-table-wrapper">
+      <table className="admin-products-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th className="actions-heading">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {filteredProducts.map((product) => (
+            <tr key={product.product_id}>
+              <td className="product-name-cell">
+                {product.name}
+              </td>
+
+              <td>
+                ${Number(product.price).toFixed(2)}
+              </td>
+
+              <td>{product.stock}</td>
+
+              <td>{product.category_name}</td>
+
+              <td>
+                {product.status === "active" ? (
+                  <span className="status-active">
+                    <FontAwesomeIcon icon={faCircleCheck} />
+                    {" "}Active
+                  </span>
+                ) : (
+                  <span className="status-inactive">
+                    <FontAwesomeIcon icon={faCircleMinus} />
+                    {" "}Inactive
+                  </span>
+                )}
+              </td>
+
+              <td>
+                <div className="admin-product-actions">
+                  <button
+                    type="button"
+                    className="admin-edit-button"
+                    onClick={() => startEdit(product)}
+                    title="Edit product"
+                  >
+                    <FontAwesomeIcon icon={faPenToSquare} />
+                    <span>Edit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="admin-status-button"
+                    onClick={() => handleStatusChange(product)}
+                    title={
+                      product.status === "active"
+                        ? "Deactivate product"
+                        : "Activate product"
+                    }
+                  >
+                    <FontAwesomeIcon
+                      icon={
+                        product.status === "active"
+                          ? faToggleOff
+                          : faToggleOn
+                      }
+                    />
+                    <span>
+                      {product.status === "active"
+                        ? "Deactivate"
+                        : "Activate"}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="admin-delete-button"
+                    onClick={() => handleDelete(product)}
+                    title="Permanently delete product"
+                  >
+                    <FontAwesomeIcon icon={faTrashCan} />
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
+        </div>
+</section>
+</div>
+);
 }

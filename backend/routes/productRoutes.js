@@ -676,7 +676,52 @@ router.delete(
     }
   }
 );
+// ============================================================
+// GET /api/products/admin/all
+// Retrieve all products including active and inactive - ADMIN ONLY
+// ============================================================
 
+router.get(
+  "/admin/all",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const [products] = await pool.query(`
+        SELECT
+          p.product_id,
+          p.name,
+          p.description,
+          p.image_url AS imageUrl,
+          p.price,
+          p.stock,
+          p.specifications,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          c.category_id,
+          c.name AS category_name
+        FROM products p
+        INNER JOIN categories c
+          ON p.category_id = c.category_id
+        ORDER BY p.created_at DESC
+      `);
+
+      res.status(200).json({
+        success: true,
+        count: products.length,
+        data: products,
+      });
+    } catch (error) {
+      console.error("Error retrieving admin products:", error.message);
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve admin products",
+      });
+    }
+  }
+);
 // ============================================================
 // GET /api/products/:productId
 // Retrieve one active product and its approved reviews
