@@ -10,7 +10,7 @@ import {
 } from "../../../services/productApi";
 import "./AdminProductManagement.css";
 import AdminReviewManagement from "./AdminReviewManagement";
-
+import AdminOrderManagement from "./AdminOrderManagement";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import {
@@ -260,6 +260,13 @@ const filteredProducts = products.filter((product) => {
   >
     Reviews
   </button>
+  <button
+  type="button"
+  className={adminView === "orders" ? "active" : ""}
+  onClick={() => setAdminView("orders")}
+>
+  Orders
+</button>
 </div>
           </div>
 
@@ -275,6 +282,9 @@ const filteredProducts = products.filter((product) => {
   <AdminReviewManagement
     onBack={() => setAdminView("products")}
   />
+)}
+{adminView === "orders" && (
+  <AdminOrderManagement />
 )}
 {adminView === "products" && (
   <>

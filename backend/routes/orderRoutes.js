@@ -296,6 +296,120 @@ router.get(
     }
   }
 );
+
+// ============================================================
+// FR13 - AUTHORIZED ORDER STATUS UPDATE
+// PATCH /api/orders/admin/:orderId/status
+// Update order status - ADMIN ONLY
+// ============================================================
+
+router.patch(
+  "/admin/:orderId/status",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const orderId = Number.parseInt(req.params.orderId, 10);
+      const { status } = req.body;
+
+      // Validate order ID
+      if (!Number.isInteger(orderId) || orderId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Order ID must be a positive integer"
+        });
+      }
+
+      // Valid order statuses from database schema
+      const validStatuses = [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled"
+      ];
+
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Status must be pending, confirmed, completed, or cancelled"
+        });
+      }
+
+      // Check that order exists
+      const [existingOrders] = await pool.query(
+        `
+        SELECT order_id
+        FROM orders
+        WHERE order_id = ?
+        LIMIT 1
+        `,
+        [orderId]
+      );
+
+      if (existingOrders.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Order not found"
+        });
+      }
+
+      // Update order status
+      await pool.query(
+        `
+        UPDATE orders
+        SET status = ?
+        WHERE order_id = ?
+        `,
+        [status, orderId]
+      );
+
+      // Retrieve updated order
+      const [orders] = await pool.query(
+        `
+        SELECT
+          o.order_id,
+          o.user_id,
+          u.full_name,
+          u.email,
+          o.order_date,
+          o.status,
+          o.total_amount
+        FROM orders o
+        INNER JOIN users u
+          ON o.user_id = u.user_id
+        WHERE o.order_id = ?
+        LIMIT 1
+        `,
+        [orderId]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Order status updated successfully",
+        data: {
+          order_id: orders[0].order_id,
+          user_id: orders[0].user_id,
+          customer_name: orders[0].full_name,
+          customer_email: orders[0].email,
+          order_date: orders[0].order_date,
+          status: orders[0].status,
+          total_amount: Number(orders[0].total_amount)
+        }
+      });
+    } catch (error) {
+      console.error(
+        "Admin order status update error:",
+        error.message
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to update order status"
+      });
+    }
+  }
+);
 // GET /api/orders/:orderId
 // Retrieve one order belonging to the authenticated customer
 router.get("/:orderId", authenticateToken, async (req, res) => {

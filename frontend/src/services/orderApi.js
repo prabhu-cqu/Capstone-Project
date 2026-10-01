@@ -48,4 +48,19 @@ export function cancelOrder(orderId) {
   return sendOrderRequest(`/${orderId}/cancel`, {
     method: "PUT",
   });
+
+  
+}
+
+// FR13 - Get all orders - ADMIN ONLY
+export function getAdminOrders() {
+  return sendOrderRequest("/admin");
+}
+
+// FR13 - Update order status - ADMIN ONLY
+export function updateOrderStatus(orderId, status) {
+  return sendOrderRequest(`/admin/${orderId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
 }
