@@ -175,3 +175,79 @@ export async function uploadProductImage(imageFile) {
 
   return result;
 }
+
+// ============================================================
+// FR12 - Review Moderation - Admin only
+// ============================================================
+
+// Get all reviews for moderation
+export async function getAdminReviews() {
+  const token = getAuthToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/products/admin/reviews`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to load reviews.");
+  }
+
+  return result;
+}
+
+// Approve or reject a review
+export async function updateReviewStatus(reviewId, status) {
+  const token = getAuthToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/products/admin/reviews/${reviewId}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ status }),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.message || "Failed to update review status."
+    );
+  }
+
+  return result;
+}
+
+// Permanently remove a review
+export async function deleteReview(reviewId) {
+  const token = getAuthToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/products/admin/reviews/${reviewId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to remove review.");
+  }
+
+  return result;
+}

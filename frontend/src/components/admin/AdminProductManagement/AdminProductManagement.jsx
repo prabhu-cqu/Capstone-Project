@@ -1,3 +1,5 @@
+
+
 import { useEffect, useState } from "react";
 import {
   createProduct,
@@ -7,6 +9,7 @@ import {
   uploadProductImage
 } from "../../../services/productApi";
 import "./AdminProductManagement.css";
+import AdminReviewManagement from "./AdminReviewManagement";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -31,6 +34,7 @@ const emptyForm = {
 };
 
 export default function AdminProductManagement({ onClose }) {
+  const [adminView, setAdminView] = useState("products");
   const [products, setProducts] = useState([]);
  const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState(emptyForm);
@@ -240,6 +244,23 @@ const filteredProducts = products.filter((product) => {
             <p className="admin-products-label">Administration</p>
             <h2>Catalogue Management</h2>
             <p>Add, edit and remove SmartShop AI products.</p>
+          <div className="admin-status-filters" style={{ marginTop: "16px" }}>
+  <button
+    type="button"
+    className={adminView === "products" ? "active" : ""}
+    onClick={() => setAdminView("products")}
+  >
+    Products
+  </button>
+
+  <button
+    type="button"
+    className={adminView === "reviews" ? "active" : ""}
+    onClick={() => setAdminView("reviews")}
+  >
+    Reviews
+  </button>
+</div>
           </div>
 
           <button
@@ -250,7 +271,13 @@ const filteredProducts = products.filter((product) => {
             Logout
           </button>
         </header>
-
+{adminView === "reviews" && (
+  <AdminReviewManagement
+    onBack={() => setAdminView("products")}
+  />
+)}
+{adminView === "products" && (
+  <>
         {message && (
           <div className="admin-success-message">{message}</div>
         )}
@@ -542,11 +569,15 @@ const filteredProducts = products.filter((product) => {
             </tr>
           ))}
         </tbody>
-      </table>
+     </table>
     </div>
   )}
 </div>
         </div>
+
+        </>
+      )}
+
 </section>
 </div>
 );

@@ -147,6 +147,59 @@ router.get("/", async (req, res) => {
   }
 });
 
+
+// ============================================================
+// FR11 - AUTHORIZED CATALOGUE ADMINISTRATION
+// GET /api/products/admin/all
+// Retrieve ALL products including inactive products - ADMIN ONLY
+// ============================================================
+
+router.get(
+  "/admin/all",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const [products] = await pool.query(`
+        SELECT
+          p.product_id,
+          p.name,
+          p.description,
+          p.image_url AS imageUrl,
+          p.price,
+          p.stock,
+          p.specifications,
+          p.status,
+          p.created_at,
+          p.updated_at,
+          c.category_id,
+          c.name AS category_name
+        FROM products p
+        INNER JOIN categories c
+          ON p.category_id = c.category_id
+        ORDER BY p.created_at DESC
+      `);
+
+      res.status(200).json({
+        success: true,
+        count: products.length,
+        data: products,
+      });
+    } catch (error) {
+      console.error(
+        "Error retrieving admin products:",
+        error.message
+      );
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to retrieve admin products",
+      });
+    }
+  }
+);
+
+
 // ============================================================
 // GET /api/products/search?q=keyword
 // Search active products by name or description
@@ -676,52 +729,214 @@ router.delete(
     }
   }
 );
+
 // ============================================================
-// GET /api/products/admin/all
-// Retrieve all products including active and inactive - ADMIN ONLY
+// FR12 - REVIEW MODERATION
+// ============================================================
+
+// GET /api/products/admin/reviews
+// Retrieve all reviews for moderation - ADMIN ONLY
 // ============================================================
 
 router.get(
-  "/admin/all",
+  "/admin/reviews",
   authenticateToken,
   requireAdmin,
   async (req, res) => {
     try {
-      const [products] = await pool.query(`
+      const [reviews] = await pool.query(`
         SELECT
-          p.product_id,
-          p.name,
-          p.description,
-          p.image_url AS imageUrl,
-          p.price,
-          p.stock,
-          p.specifications,
-          p.status,
-          p.created_at,
-          p.updated_at,
-          c.category_id,
-          c.name AS category_name
-        FROM products p
-        INNER JOIN categories c
-          ON p.category_id = c.category_id
-        ORDER BY p.created_at DESC
+          r.review_id AS reviewId,
+          r.product_id AS productId,
+          r.user_id AS userId,
+          r.rating,
+          r.review_text AS reviewText,
+          r.review_date AS reviewDate,
+          r.status,
+          p.name AS productName,
+u.full_name AS customerName,
+          u.email AS customerEmail
+        FROM reviews r
+        INNER JOIN products p
+          ON r.product_id = p.product_id
+        INNER JOIN users u
+          ON r.user_id = u.user_id
+        ORDER BY r.review_date DESC, r.review_id DESC
       `);
 
       res.status(200).json({
         success: true,
-        count: products.length,
-        data: products,
+        count: reviews.length,
+        data: reviews,
       });
     } catch (error) {
-      console.error("Error retrieving admin products:", error.message);
+      console.error("Error retrieving admin reviews:", error.message);
 
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve admin products",
+        message: "Failed to retrieve reviews",
       });
     }
   }
 );
+
+// ============================================================
+// PATCH /api/products/admin/reviews/:reviewId
+// Approve or reject a review - ADMIN ONLY
+// ============================================================
+
+router.patch(
+  "/admin/reviews/:reviewId",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const reviewId = Number.parseInt(req.params.reviewId, 10);
+      const { status } = req.body;
+
+      if (!Number.isInteger(reviewId) || reviewId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Review ID must be a positive integer",
+        });
+      }
+
+      const validStatuses = ["approved", "rejected"];
+
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Status must be approved or rejected",
+        });
+      }
+
+      const [existingReviews] = await pool.query(
+        `
+          SELECT review_id
+          FROM reviews
+          WHERE review_id = ?
+          LIMIT 1
+        `,
+        [reviewId]
+      );
+
+      if (existingReviews.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Review not found",
+        });
+      }
+
+      await pool.query(
+        `
+          UPDATE reviews
+          SET status = ?
+          WHERE review_id = ?
+        `,
+        [status, reviewId]
+      );
+
+      const [reviews] = await pool.query(
+        `
+          SELECT
+            r.review_id AS reviewId,
+            r.product_id AS productId,
+            r.user_id AS userId,
+            r.rating,
+            r.review_text AS reviewText,
+            r.review_date AS reviewDate,
+            r.status,
+            p.name AS productName,
+            u.full_name AS customerName,
+            u.email AS customerEmail
+          FROM reviews r
+          INNER JOIN products p
+            ON r.product_id = p.product_id
+          INNER JOIN users u
+            ON r.user_id = u.user_id
+          WHERE r.review_id = ?
+          LIMIT 1
+        `,
+        [reviewId]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: `Review ${status} successfully`,
+        data: reviews[0],
+      });
+    } catch (error) {
+      console.error("Error moderating review:", error.message);
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to moderate review",
+      });
+    }
+  }
+);
+
+// ============================================================
+// DELETE /api/products/admin/reviews/:reviewId
+// Permanently remove a review - ADMIN ONLY
+// ============================================================
+
+router.delete(
+  "/admin/reviews/:reviewId",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    try {
+      const reviewId = Number.parseInt(req.params.reviewId, 10);
+
+      if (!Number.isInteger(reviewId) || reviewId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Review ID must be a positive integer",
+        });
+      }
+
+      const [existingReviews] = await pool.query(
+        `
+          SELECT review_id
+          FROM reviews
+          WHERE review_id = ?
+          LIMIT 1
+        `,
+        [reviewId]
+      );
+
+      if (existingReviews.length === 0) {
+        return res.status(404).json({
+          success: false,
+          message: "Review not found",
+        });
+      }
+
+      await pool.query(
+        `
+          DELETE FROM reviews
+          WHERE review_id = ?
+        `,
+        [reviewId]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Review removed successfully",
+        reviewId,
+      });
+    } catch (error) {
+      console.error("Error removing review:", error.message);
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to remove review",
+      });
+    }
+  }
+);
+
 // ============================================================
 // GET /api/products/:productId
 // Retrieve one active product and its approved reviews
