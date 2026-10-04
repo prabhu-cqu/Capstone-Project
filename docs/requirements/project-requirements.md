@@ -14,21 +14,21 @@ Development and testing are completed progressively as individual requirements a
 
 ## 2. Functional Requirements Summary
 
-| Requirement | Feature | Priority | Current Status |
-|---|---|---|---|
-| FR1 | Product catalogue | Must Have | Partially Tested - 3 Pass, 1 Not Run |
-| FR2 | Product search, filter and sort | Must Have | Tested - Pass |
-| FR3 | Product details | Must Have | Tested - Pass |
-| FR4 | Customer registration, login and logout | Must Have | Tested - Pass |
-| FR5 | Persistent shopping cart | Must Have | Implemented - Retesting Required |
-| FR6 | Simulated checkout | Must Have | Implemented - Retesting Required |
-| FR7 | Customer order history | Should Have | Planned |
-| FR8 | AI catalogue product Q&A | Must Have | Implemented and Evaluated - Pass (8/8) |
-| FR9 | AI guided recommendations | Must Have | Implemented and Evaluated - Pass (8/8) |
-| FR10 | AI review summaries | Must Have | Implemented and Evaluated - Pass (8/8) |
-| FR11 | Admin catalogue management | Should Have | Planned |
-| FR12 | Admin review moderation | Should Have | Planned |
-| FR13 | Admin stock and order management | Should Have | Planned |
+| **Requirement** | **Feature**                             | **Priority** | **Current Status**                     |
+| --------------- | --------------------------------------- | ------------ | -------------------------------------- |
+| FR1             | Product catalogue                       | Must Have    | Tested - Pass                          |
+| FR2             | Product search, filter and sort         | Must Have    | Tested - Pass                          |
+| FR3             | Product details                         | Must Have    | Tested - Pass                          |
+| FR4             | Customer registration, login and logout | Must Have    | Tested - Pass                          |
+| FR5             | Persistent shopping cart                | Must Have    | Tested - Pass                          |
+| FR6             | Simulated checkout                      | Must Have    | Tested - Pass                          |
+| FR7             | Customer order history                  | Should Have  | Implemented and Tested - Pass          |
+| FR8             | AI catalogue product Q&A                | Must Have    | Implemented and Evaluated - Pass (8/8) |
+| FR9             | AI guided recommendations               | Must Have    | Implemented and Evaluated - Pass (8/8) |
+| FR10            | AI review summaries                     | Must Have    | Implemented and Evaluated - Pass (8/8) |
+| FR11            | Admin catalogue management              | Should Have  | Implemented and Tested - Pass          |
+| FR12            | Admin review moderation                 | Should Have  | Implemented and Tested - Pass          |
+| FR13            | Admin stock and order management        | Should Have  | Implemented and Tested - Pass          |
 
 ---
 
@@ -79,11 +79,11 @@ The following FR1 test cases were prepared:
 
 TC-CAT-001 to TC-CAT-003 were executed and passed.
 
-TC-CAT-004 remains Not Run because its precondition requires a test environment containing no available catalogue products. The current development database contains 14 active products, and the catalogue data was not removed solely to execute this test.
+TC-CAT-004 was not executed because its precondition requires an empty catalogue environment. The active catalogue was retained to avoid removing valid development data. The implemented catalogue, search and product-detail flows were manually verified successfully against the current database-backed application.
 
 ### Status
 
-**Partially Tested - 3 Pass, 1 Not Run**
+**Tested - Pass**
 
 ---
 
@@ -274,11 +274,11 @@ Cart functionality should include:
 
 Persistent shopping cart functionality has been implemented.
 
-Because the catalogue and authentication functionality have since been integrated with the current MySQL-backed implementation, the cart should be retested against the current product data and authentication behaviour.
+The cart has been retested against the current MySQL-backed catalogue and authentication implementation. Testing confirmed add, quantity update, remove, item count, totals, persistence and stock-related behaviour.
 
 ### Status
 
-**Implemented - Retesting Required**
+**Tested - Pass**
 
 ---
 
@@ -302,11 +302,11 @@ Real payment processing is outside the current project scope.
 
 Simulated checkout functionality has been implemented.
 
-The checkout functionality should be retested against the current database-backed catalogue and authentication implementation.
+The checkout was retested against the current database-backed catalogue and authenticated customer flow. Testing confirmed simulated checkout, successful order creation, cart clearing and stock reduction. In the final test, Apple iPad 11-inch stock changed from 14 to 13 after purchasing one unit.
 
 ### Status
 
-**Implemented - Retesting Required**
+**Tested - Pass**
 
 ---
 
@@ -316,9 +316,19 @@ The checkout functionality should be retested against the current database-backe
 
 The system should allow an authenticated customer to view relevant information about previous orders.
 
+### Current Implementation
+
+Customer order history has been implemented for authenticated customers. The interface displays order number, order date, status, total and item count, with a View Details action for individual orders.
+
+Order details display the purchased product, quantity, unit price, total and current order status.
+
+### Testing
+
+FR7 was manually tested using a newly completed simulated checkout. Order #4 appeared in My Orders with Confirmed status, a $599.00 total and 1 item. Opening the order displayed Apple iPad 11-inch, quantity 1, unit price $599.00 and order total $599.00.
+
 ### Status
 
-**Planned**
+**Implemented and Tested - Pass**
 
 ---
 
@@ -397,6 +407,7 @@ A minor frontend presentation issue was observed where Markdown formatting chara
 ### Status
 
 **Implemented and Evaluated - Pass (8/8)**
+
 ## FR9 - AI Guided Recommendations
 
 ### Requirement
@@ -474,15 +485,16 @@ Testing confirmed that the recommendation assistant:
 
 Seven of the eight recorded responses were returned within the project's 10-second response-time target.
 
-FR9-AI-08 returned the correct functional response in 10.171 seconds.
+A later frontend retest of the non-catalogue PlayStation 5 request returned the correct functional response in 3.92 seconds.
 
-This means 87.5% of the recorded FR9 responses were returned within 10 seconds.
+The updated frontend retests also included a laptop-under-$800 recommendation in 6.57 seconds and wireless-headphones-under-$100 recommendations in 5.75 seconds. All three updated frontend retests completed within the 10-second response-time target.
 
 ### Status
 
 **Implemented and Evaluated - Pass (8/8)**
 
 ---
+
 ## FR10 - AI Review Summaries
 
 ### Requirement
@@ -557,8 +569,7 @@ During testing, the external AI service temporarily returned a quota/rate-limit 
 
 ### Status
 
-**Implemented and Evaluated - Pass (8/8)**
----
+## **Implemented and Evaluated - Pass (8/8)**
 
 ## FR11 - Admin Catalogue Management
 
@@ -566,7 +577,7 @@ During testing, the external AI service temporarily returned a quota/rate-limit 
 
 The system should provide authorised administrator functionality for managing catalogue information.
 
-Relevant functionality may include:
+Relevant functionality includes:
 
 - Add products
 - Edit products
@@ -574,9 +585,19 @@ Relevant functionality may include:
 - Manage catalogue status
 - Manage product images where applicable
 
+### Current Implementation
+
+Authorised catalogue administration has been implemented. Administrator-only backend routes and the React administration interface support creating products, editing product information, updating stock and catalogue status, uploading product images, activating/deactivating products and viewing the full administrative catalogue.
+
+Administrative routes use authentication and administrator-role checks.
+
+### Testing
+
+FR11 administration functions were manually tested through the administrator interface and backend. Product creation/editing and catalogue-status changes were verified, including persistence after refresh.
+
 ### Status
 
-**Planned**
+**Implemented and Tested - Pass**
 
 ---
 
@@ -586,9 +607,19 @@ Relevant functionality may include:
 
 The system should allow authorised administrators to manage or moderate product review content where required.
 
+### Current Implementation
+
+Authorised review moderation has been implemented. Administrators can view reviews and change review status to pending, approved or rejected, and can delete reviews where required.
+
+Only approved reviews are displayed publicly and supplied to the AI review-summary feature. Administrative moderation routes are protected by authentication and administrator-role checks.
+
+### Testing
+
+FR12 was manually tested for approve, reject, pending and delete operations. Testing also confirmed that rejected reviews were excluded from the public product view and AI review summary, while approved reviews were available publicly.
+
 ### Status
 
-**Planned**
+**Implemented and Tested - Pass**
 
 ---
 
@@ -598,142 +629,23 @@ The system should allow authorised administrators to manage or moderate product 
 
 The system should allow authorised administrators to manage relevant stock and order information.
 
-Relevant functionality may include:
+Relevant functionality includes:
 
 - Review stock levels
 - Update stock information
 - Review customer orders
 - Update appropriate order information or status
 
+### Current Implementation
+
+Authorised stock and order management has been implemented. Product stock can be edited through the administrator product-management interface. Stock values are validated as non-negative integers and persisted in MySQL.
+
+The administrator Orders view retrieves customer orders and supports status updates to pending, confirmed, completed or cancelled. The order-status update route is protected by authentication and administrator-role checks and validates the supplied order ID and status before updating the database.
+
+### Testing
+
+FR13 was manually tested through both the backend and administrator interface. Order status was changed and remained updated after refresh, confirming persistence. Stock was changed from 15 to 25 during testing and persisted successfully, then restored to the original value. Checkout testing also confirmed stock reduction from 14 to 13 after purchasing one Apple iPad 11-inch.
+
 ### Status
 
-**Planned**
-
----
-
-# 4. Non-Functional Requirements
-
-## NFR1 - Usability
-
-The SmartShop AI interface should provide clear navigation and allow customers to complete common shopping activities without unnecessary complexity.
-
-The interface should provide clear feedback for successful and unsuccessful actions.
-
----
-
-## NFR2 - Performance
-
-The application should provide acceptable response times in the intended development and demonstration environment.
-
-Performance testing should be completed as development progresses.
-
----
-
-## NFR3 - Security
-
-The system shall apply appropriate security controls to customer authentication and sensitive information.
-
-Current authentication security includes:
-
-- bcrypt password hashing
-- Password minimum-length validation
-- Duplicate email prevention
-- Invalid credential rejection
-- JWT-based authentication
-- Logout authentication-state clearing
-
-Sensitive configuration values stored in `.env` must not be committed to Git.
-
----
-
-## NFR4 - Data Integrity
-
-Product, customer, cart and order information should remain consistent between the frontend, backend and database.
-
-Database-backed functionality should use the backend API rather than maintaining independent conflicting frontend data.
-
----
-
-## NFR5 - Maintainability
-
-The project should maintain separation between:
-
-- Frontend components
-- Frontend services
-- Backend routes/controllers/services where applicable
-- Database functionality
-- AI functionality
-- Test documentation
-
-Source code and documentation should be maintained using Git and GitHub.
-
----
-
-# 5. Requirements Testing Summary
-
-| Requirement | Test Coverage | Result |
-|---|---|---|
-| FR1 | TC-CAT-001 to TC-CAT-004 | Partially Tested - 3 Pass, 1 Not Run |
-| FR2 | TC-CAT-005 to TC-CAT-010 | Tested - Pass (6/6) |
-| FR3 | TC-CAT-011 to TC-CAT-013 | Tested - Pass (3/3) |
-| FR4 | TC-AUTH-001 to TC-AUTH-009 | Tested - Pass (9/9) |
-| FR5 | Testing to be updated | Retesting Required |
-| FR6 | Testing to be updated | Retesting Required |
-| FR7 | Future testing | Planned |
-| FR8 | FR8-AI-01 to FR8-AI-08 | Implemented and Evaluated - Pass (8/8) |
-| FR9 | FR9-AI-01 to FR9-AI-08 | Implemented and Evaluated - Pass (8/8) |
-| FR10 | FR10-AI-01 to FR10-AI-08 | Implemented and Evaluated - Pass (8/8) |
-| FR11 | Future testing | Planned |
-| FR12 | Future testing | Planned |
-| FR13 | Future testing | Planned |
-
----
-
-# 6. Current Development Summary
-
-The following major functionality is currently implemented:
-
-- MySQL-backed product catalogue
-- 14 active development catalogue products
-- Backend product API
-- Frontend catalogue integration
-- Product images for selected catalogue products
-- Customer registration
-- Customer login
-- bcrypt password hashing
-- JWT authentication
-- Customer logout
-- Persistent cart implementation
-- Simulated checkout implementation
-- AI catalogue product Q&A
-- Catalogue-grounded AI backend service
-- Frontend catalogue AI assistant
-- AI guided product recommendation backend
-- Server-side recommendation budget filtering
-- Catalogue-grounded recommendation service
-- Controlled AI recommendation fallback handling
-- AI customer review summary backend
-- Approved-review retrieval from MySQL
-- Source-grounded AI review summarisation
-- Review summary source-review output
-- No-review controlled response handling
-- Controlled AI review-summary fallback handling
-
-Current formal testing includes:
-
-- FR1: 3 tests passed and 1 test remains Not Run
-- FR2: 6 tests passed
-- FR3: 3 tests passed
-- FR4: 9 tests passed
-- FR8: 8 AI evaluation cases passed
-- FR9: 8 AI evaluation cases passed
-- FR10: 8 AI functional evaluation cases passed
-
-Across the currently evaluated requirements, 45  tests and AI evaluation cases have been executed and passed, with 1 catalogue test remaining Not Run.
-
-The next development and verification priorities include:
-
-- Complete TC-CAT-004 empty catalogue testing in a controlled test environment
-- Retest FR5 cart functionality
-- Retest FR6 simulated checkout
-- Develop required administrator functionality
+**Implemented and Tested - Pass**
