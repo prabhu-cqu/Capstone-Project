@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getOrderById, getOrders } from "../../../services/orderApi";
+import { submitProductReview } from "../../../services/productApi";
 import "./OrderHistory.css";
 
 function OrderHistory({ onClose }) {
@@ -8,6 +9,11 @@ function OrderHistory({ onClose }) {
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [error, setError] = useState("");
+const [reviewProduct, setReviewProduct] = useState(null);
+const [rating, setRating] = useState(5);
+const [reviewText, setReviewText] = useState("");
+const [reviewMessage, setReviewMessage] = useState("");
+const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +59,32 @@ function OrderHistory({ onClose }) {
       setDetailsLoading(false);
     }
   }
+async function handleReviewSubmit(event) {
+  event.preventDefault();
+
+  if (!reviewProduct) return;
+
+  try {
+    setReviewSubmitting(true);
+    setReviewMessage("");
+
+    const response = await submitProductReview(
+      reviewProduct.product_id,
+      rating,
+      reviewText
+    );
+
+    setReviewMessage(response.message);
+    setReviewText("");
+    setRating(5);
+    setReviewProduct(null);
+  } catch (err) {
+    setReviewMessage(err.message || "Unable to submit review.");
+  } finally {
+    setReviewSubmitting(false);
+  }
+}
+
 
   function formatDate(dateValue) {
     if (!dateValue) {
@@ -142,12 +174,34 @@ function OrderHistory({ onClose }) {
                 <p>{formatDate(selectedOrder.order_date)}</p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setSelectedOrder(null)}
-              >
-                Close details
-              </button>
+              <div className="order-details-header-actions">
+  <button
+    type="button"
+    className="write-review-button"
+    onClick={() => {
+      const item = selectedOrder.items?.[0];
+
+      if (item) {
+        setReviewProduct(item);
+        setRating(5);
+        setReviewText("");
+        setReviewMessage("");
+      }
+    }}
+  >
+    Write Review
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setSelectedOrder(null);
+      setReviewProduct(null);
+    }}
+  >
+    Close details
+  </button>
+</div>
             </div>
 
             <p>
@@ -166,9 +220,8 @@ function OrderHistory({ onClose }) {
                       {formatPrice(item.unit_price)} × {item.quantity}
                     </p>
                   </div>
-
-                  <strong>{formatPrice(item.subtotal)}</strong>
-                </div>
+<strong>{formatPrice(item.subtotal)}</strong>
+            </div>
               ))}
             </div>
 
@@ -176,6 +229,76 @@ function OrderHistory({ onClose }) {
               <span>Order total</span>
               <strong>{formatPrice(selectedOrder.total_amount)}</strong>
             </div>
+{reviewProduct && (
+  <form className="review-form" onSubmit={handleReviewSubmit}>
+    <div className="review-form-header">
+      <div>
+        <h3>Write Review</h3>
+        <p>
+          Share your experience with{" "}
+          <strong>{reviewProduct.name}</strong>
+        </p>
+      </div>
+    </div>
+
+    <div className="review-form-field">
+      <label htmlFor="review-rating">Rating</label>
+      <select
+        id="review-rating"
+        value={rating}
+        onChange={(event) =>
+          setRating(Number(event.target.value))
+        }
+        required
+      >
+        <option value={5}>★★★★★ - 5 Excellent</option>
+        <option value={4}>★★★★☆ - 4 Good</option>
+        <option value={3}>★★★☆☆ - 3 Average</option>
+        <option value={2}>★★☆☆☆ - 2 Poor</option>
+        <option value={1}>★☆☆☆☆ - 1 Very Poor</option>
+      </select>
+    </div>
+
+    <div className="review-form-field">
+      <label htmlFor="review-text">Your Review</label>
+      <textarea
+        id="review-text"
+        value={reviewText}
+        onChange={(event) => setReviewText(event.target.value)}
+        placeholder="Tell us what you liked or disliked about this product..."
+        rows="4"
+        required
+      />
+    </div>
+
+    <div className="review-form-actions">
+      <button
+        type="submit"
+        className="review-submit-button"
+        disabled={reviewSubmitting}
+      >
+        {reviewSubmitting ? "Submitting..." : "Submit Review"}
+      </button>
+
+      <button
+        type="button"
+        className="review-cancel-button"
+        onClick={() => {
+          setReviewProduct(null);
+          setReviewText("");
+          setReviewMessage("");
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+)}
+
+{reviewMessage && (
+  <p className="review-message">{reviewMessage}</p>
+)}
+
           </div>
         )}
       </section>

@@ -730,6 +730,91 @@ router.delete(
   }
 );
 
+// ===========================================
+// CUSTOMER REVIEW SUBMISSION
+// POST /api/products/:productId/reviews
+// ===========================================
+
+router.post(
+  "/:productId/reviews",
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const productId = Number.parseInt(req.params.productId, 10);
+      const userId = req.user.user_id;
+      const rating = Number.parseInt(req.body.rating, 10);
+      const reviewText = String(req.body.reviewText || "").trim();
+
+      if (!Number.isInteger(productId) || productId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid product"
+        });
+      }
+
+      if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return res.status(400).json({
+          success: false,
+          message: "Rating must be between 1 and 5"
+        });
+      }
+
+      if (!reviewText) {
+        return res.status(400).json({
+          success: false,
+          message: "Review text is required"
+        });
+      }
+
+      // Customer must have purchased this product
+      const [purchases] = await pool.query(
+        `
+        SELECT oi.order_item_id
+        FROM order_items oi
+        INNER JOIN orders o
+          ON oi.order_id = o.order_id
+        WHERE o.user_id = ?
+          AND oi.product_id = ?
+          AND o.status <> 'cancelled'
+        LIMIT 1
+        `,
+        [userId, productId]
+      );
+
+      if (purchases.length === 0) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only review products you have purchased"
+        });
+      }
+
+      const [result] = await pool.query(
+        `
+        INSERT INTO reviews
+          (product_id, user_id, rating, review_text, status)
+        VALUES
+          (?, ?, ?, ?, 'pending')
+        `,
+        [productId, userId, rating, reviewText]
+      );
+
+      return res.status(201).json({
+        success: true,
+        message: "Review submitted successfully and is awaiting admin approval",
+        reviewId: result.insertId
+      });
+    } catch (error) {
+      console.error("Error submitting review:", error.message);
+
+      return res.status(500).json({
+        success: false,
+        message: "Failed to submit review"
+      });
+    }
+  }
+);
+
+
 // ============================================================
 // FR12 - REVIEW MODERATION
 // ============================================================

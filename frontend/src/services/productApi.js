@@ -175,6 +175,34 @@ export async function uploadProductImage(imageFile) {
 
   return result;
 }
+// Submit a customer review
+export async function submitProductReview(productId, rating, reviewText) {
+  const token = getAuthToken();
+
+  const response = await fetch(
+    `${API_BASE_URL}/products/${productId}/reviews`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        rating,
+        reviewText,
+      }),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "Failed to submit review.");
+  }
+
+  return result;
+}
+
 
 // ============================================================
 // FR12 - Review Moderation - Admin only
