@@ -92,19 +92,22 @@ function ProductCataloguePage({
 
     const matchingProducts = activeProducts.filter((product) => {
       const searchableText = [
-        product.name,
-        product.brand,
-        product.category,
-        product.description,
-        product.compatibility,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+  product.name,
+  product.brand,
+  product.category,
+]
+  .filter(Boolean)
+  .join(" ")
+  .toLowerCase();
 
-      const matchesSearch =
-        searchText === "" || searchableText.includes(searchText);
+     const categorySearch =
+  searchText === "laptop" || searchText === "laptops";
 
+const matchesSearch =
+  searchText === "" ||
+  (categorySearch
+    ? product.category?.toLowerCase() === "laptops"
+    : searchableText.includes(searchText));
       const matchesCategory =
         filters.category === "" || product.category === filters.category;
 

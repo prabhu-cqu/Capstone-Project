@@ -29,7 +29,7 @@ const emptyForm = {
   price: "",
   stock: "",
   category_name: "",
-  specifications: "{}",
+  specifications: "",
   status: "active",
 };
 
@@ -98,8 +98,11 @@ export default function AdminProductManagement({ onClose }) {
       price: product.price ?? "",
       stock: product.stock ?? "",
       category_name: product.category_name || "",
-      specifications: JSON.stringify(specifications, null, 2),
-      status: product.status || "active",
+specifications:
+  specifications.details ||
+  Object.entries(specifications)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("\n"),      status: product.status || "active",
     });
 
     setMessage("");
@@ -114,15 +117,9 @@ export default function AdminProductManagement({ onClose }) {
       setMessage("");
       setError("");
 
-      let parsedSpecifications = {};
-
-      try {
-        parsedSpecifications = JSON.parse(
-          form.specifications.trim() || "{}"
-        );
-      } catch {
-        throw new Error("Specifications must be valid JSON.");
-      }
+      const parsedSpecifications = {
+  details: form.specifications.trim()
+};
 
       let imageUrl = null;
 
@@ -407,13 +404,14 @@ const filteredProducts = products.filter((product) => {
             </div>
 
             <label>
-              Specifications (JSON)
+              Specifications
               <textarea
-                name="specifications"
-                value={form.specifications}
-                onChange={handleChange}
-                rows="5"
-              />
+  name="specifications"
+  value={form.specifications}
+  onChange={handleChange}
+  rows="5"
+  placeholder="Brand: HP&#10;RAM: 16GB&#10;Storage: 512GB SSD&#10;Screen: 15.6 inch"
+/>
             </label>
 
             <div className="admin-form-actions">
