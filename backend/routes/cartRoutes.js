@@ -76,13 +76,16 @@ router.post("/items", authenticateToken, async (req, res) => {
       });
     }
 
-    // Find the customer's active cart
+    // Find the customer's existing cart.
+    // The database stores one cart row per user, so a completed cart
+    // must be reused for the customer's next shopping session.
     const [carts] = await connection.query(
       `
-      SELECT cart_id
+      SELECT
+        cart_id,
+        status
       FROM carts
       WHERE user_id = ?
-        AND status = 'active'
       LIMIT 1
       `,
       [userId]
@@ -91,7 +94,7 @@ router.post("/items", authenticateToken, async (req, res) => {
     let cartId;
 
     if (carts.length === 0) {
-      // Create a new active cart
+      // Customer has never had a cart, so create a new active cart
       const [cartResult] = await connection.query(
         `
         INSERT INTO carts (user_id, status)
@@ -102,7 +105,29 @@ router.post("/items", authenticateToken, async (req, res) => {
 
       cartId = cartResult.insertId;
     } else {
+      // Reuse the customer's existing cart
       cartId = carts[0].cart_id;
+
+      // If the previous checkout completed the cart,
+      // remove its old cart items and reactivate it.
+      if (carts[0].status === "completed") {
+        await connection.query(
+          `
+          DELETE FROM cart_items
+          WHERE cart_id = ?
+          `,
+          [cartId]
+        );
+
+        await connection.query(
+          `
+          UPDATE carts
+          SET status = 'active'
+          WHERE cart_id = ?
+          `,
+          [cartId]
+        );
+      }
     }
 
     // Check whether this product is already in the cart
@@ -191,6 +216,7 @@ router.post("/items", authenticateToken, async (req, res) => {
     connection.release();
   }
 });
+
 // GET /api/cart
 // Retrieve the authenticated customer's active cart
 router.get("/", authenticateToken, async (req, res) => {
@@ -288,6 +314,7 @@ router.get("/", authenticateToken, async (req, res) => {
     });
   }
 });
+
 // PUT /api/cart/items/:productId
 // Update the quantity of an existing cart item
 router.put("/items/:productId", authenticateToken, async (req, res) => {
@@ -434,6 +461,7 @@ router.put("/items/:productId", authenticateToken, async (req, res) => {
     connection.release();
   }
 });
+
 // DELETE /api/cart/items/:productId
 // Remove a product from the authenticated customer's cart
 router.delete("/items/:productId", authenticateToken, async (req, res) => {
@@ -505,4 +533,5 @@ router.delete("/items/:productId", authenticateToken, async (req, res) => {
     });
   }
 });
+
 module.exports = router;

@@ -2,13 +2,16 @@ const express = require("express");
 const pool = require("../config/db");
 const {
   authenticateToken,
-  requireAdmin
+  requireAdmin,
 } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
+// ============================================================
 // POST /api/orders
 // Create an order from the authenticated customer's active cart
+// ============================================================
+
 router.post("/", authenticateToken, async (req, res) => {
   const connection = await pool.getConnection();
 
@@ -20,11 +23,11 @@ router.post("/", authenticateToken, async (req, res) => {
     // 1. Find the customer's active cart
     const [carts] = await connection.query(
       `
-      SELECT cart_id
-      FROM carts
-      WHERE user_id = ?
-        AND status = 'active'
-      LIMIT 1
+        SELECT cart_id
+        FROM carts
+        WHERE user_id = ?
+          AND status = 'active'
+        LIMIT 1
       `,
       [userId]
     );
@@ -34,7 +37,7 @@ router.post("/", authenticateToken, async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: "Your cart is empty"
+        message: "Your cart is empty",
       });
     }
 
@@ -43,19 +46,19 @@ router.post("/", authenticateToken, async (req, res) => {
     // 2. Retrieve cart items and lock the product rows
     const [items] = await connection.query(
       `
-      SELECT
-        ci.cart_item_id,
-        ci.product_id,
-        ci.quantity,
-        p.name,
-        p.price,
-        p.stock,
-        p.status
-      FROM cart_items ci
-      INNER JOIN products p
-        ON ci.product_id = p.product_id
-      WHERE ci.cart_id = ?
-      FOR UPDATE
+        SELECT
+          ci.cart_item_id,
+          ci.product_id,
+          ci.quantity,
+          p.name,
+          p.price,
+          p.stock,
+          p.status
+        FROM cart_items ci
+        INNER JOIN products p
+          ON ci.product_id = p.product_id
+        WHERE ci.cart_id = ?
+        FOR UPDATE
       `,
       [cartId]
     );
@@ -65,7 +68,7 @@ router.post("/", authenticateToken, async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: "Your cart is empty"
+        message: "Your cart is empty",
       });
     }
 
@@ -76,7 +79,7 @@ router.post("/", authenticateToken, async (req, res) => {
 
         return res.status(400).json({
           success: false,
-          message: `Product "${item.name}" is no longer available`
+          message: `Product "${item.name}" is no longer available`,
         });
       }
 
@@ -85,7 +88,7 @@ router.post("/", authenticateToken, async (req, res) => {
 
         return res.status(400).json({
           success: false,
-          message: `Insufficient stock for "${item.name}". Only ${item.stock} item(s) are available.`
+          message: `Insufficient stock for "${item.name}". Only ${item.stock} item(s) are available.`,
         });
       }
     }
@@ -99,10 +102,10 @@ router.post("/", authenticateToken, async (req, res) => {
     // 5. Create the order
     const [orderResult] = await connection.query(
       `
-      INSERT INTO orders
-        (user_id, status, total_amount)
-      VALUES
-        (?, 'confirmed', ?)
+        INSERT INTO orders
+          (user_id, status, total_amount)
+        VALUES
+          (?, 'confirmed', ?)
       `,
       [userId, totalAmount.toFixed(2)]
     );
@@ -115,25 +118,25 @@ router.post("/", authenticateToken, async (req, res) => {
 
       await connection.query(
         `
-        INSERT INTO order_items
-          (order_id, product_id, quantity, unit_price, subtotal)
-        VALUES
-          (?, ?, ?, ?, ?)
+          INSERT INTO order_items
+            (order_id, product_id, quantity, unit_price, subtotal)
+          VALUES
+            (?, ?, ?, ?, ?)
         `,
         [
           orderId,
           item.product_id,
           item.quantity,
           item.price,
-          subtotal.toFixed(2)
+          subtotal.toFixed(2),
         ]
       );
 
       await connection.query(
         `
-        UPDATE products
-        SET stock = stock - ?
-        WHERE product_id = ?
+          UPDATE products
+          SET stock = stock - ?
+          WHERE product_id = ?
         `,
         [item.quantity, item.product_id]
       );
@@ -142,9 +145,9 @@ router.post("/", authenticateToken, async (req, res) => {
     // 7. Mark the cart as completed
     await connection.query(
       `
-      UPDATE carts
-      SET status = 'completed'
-      WHERE cart_id = ?
+        UPDATE carts
+        SET status = 'completed'
+        WHERE cart_id = ?
       `,
       [cartId]
     );
@@ -167,9 +170,9 @@ router.post("/", authenticateToken, async (req, res) => {
           unit_price: Number(item.price),
           subtotal: Number(
             (Number(item.price) * item.quantity).toFixed(2)
-          )
-        }))
-      }
+          ),
+        })),
+      },
     });
   } catch (error) {
     await connection.rollback();
@@ -178,37 +181,41 @@ router.post("/", authenticateToken, async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Failed to create order"
+      message: "Failed to create order",
     });
   } finally {
     connection.release();
   }
 });
+
+// ============================================================
 // GET /api/orders
 // Retrieve all orders belonging to the authenticated customer
+// ============================================================
+
 router.get("/", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
 
     const [orders] = await pool.query(
       `
-      SELECT
-        o.order_id,
-        o.order_date,
-        o.status,
-        o.total_amount,
-        COUNT(oi.order_item_id) AS total_products,
-        COALESCE(SUM(oi.quantity), 0) AS total_items
-      FROM orders o
-      LEFT JOIN order_items oi
-        ON o.order_id = oi.order_id
-      WHERE o.user_id = ?
-      GROUP BY
-        o.order_id,
-        o.order_date,
-        o.status,
-        o.total_amount
-      ORDER BY o.order_date DESC
+        SELECT
+          o.order_id,
+          o.order_date,
+          o.status,
+          o.total_amount,
+          COUNT(oi.order_item_id) AS total_products,
+          COALESCE(SUM(oi.quantity), 0) AS total_items
+        FROM orders o
+        LEFT JOIN order_items oi
+          ON o.order_id = oi.order_id
+        WHERE o.user_id = ?
+        GROUP BY
+          o.order_id,
+          o.order_date,
+          o.status,
+          o.total_amount
+        ORDER BY o.order_date DESC
       `,
       [userId]
     );
@@ -222,20 +229,24 @@ router.get("/", authenticateToken, async (req, res) => {
         status: order.status,
         total_amount: Number(order.total_amount),
         total_products: Number(order.total_products),
-        total_items: Number(order.total_items)
-      }))
+        total_items: Number(order.total_items),
+      })),
     });
   } catch (error) {
     console.error("Get orders error:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to retrieve orders"
+      message: "Failed to retrieve orders",
     });
   }
 });
+
+// ============================================================
 // GET /api/orders/admin
 // Retrieve all orders for administrators
+// ============================================================
+
 router.get(
   "/admin",
   authenticateToken,
@@ -244,30 +255,30 @@ router.get(
     try {
       const [orders] = await pool.query(
         `
-        SELECT
-          o.order_id,
-          o.user_id,
-          u.full_name,
-          u.email,
-          o.order_date,
-          o.status,
-          o.total_amount,
-          COUNT(oi.order_item_id) AS total_products,
-          COALESCE(SUM(oi.quantity), 0) AS total_items
-        FROM orders o
-        INNER JOIN users u
-          ON o.user_id = u.user_id
-        LEFT JOIN order_items oi
-          ON o.order_id = oi.order_id
-        GROUP BY
-          o.order_id,
-          o.user_id,
-          u.full_name,
-          u.email,
-          o.order_date,
-          o.status,
-          o.total_amount
-        ORDER BY o.order_date DESC
+          SELECT
+            o.order_id,
+            o.user_id,
+            u.full_name,
+            u.email,
+            o.order_date,
+            o.status,
+            o.total_amount,
+            COUNT(oi.order_item_id) AS total_products,
+            COALESCE(SUM(oi.quantity), 0) AS total_items
+          FROM orders o
+          INNER JOIN users u
+            ON o.user_id = u.user_id
+          LEFT JOIN order_items oi
+            ON o.order_id = oi.order_id
+          GROUP BY
+            o.order_id,
+            o.user_id,
+            u.full_name,
+            u.email,
+            o.order_date,
+            o.status,
+            o.total_amount
+          ORDER BY o.order_date DESC
         `
       );
 
@@ -283,169 +294,221 @@ router.get(
           status: order.status,
           total_amount: Number(order.total_amount),
           total_products: Number(order.total_products),
-          total_items: Number(order.total_items)
-        }))
+          total_items: Number(order.total_items),
+        })),
       });
     } catch (error) {
       console.error("Get all orders error:", error.message);
 
       res.status(500).json({
         success: false,
-        message: "Failed to retrieve all orders"
+        message: "Failed to retrieve all orders",
       });
     }
   }
 );
-// PUT /api/orders/:orderId/status
-// Update an order status by an administrator
-router.put(
-  "/:orderId/status",
-  authenticateToken,
-  requireAdmin,
-  async (req, res) => {
-    const connection = await pool.getConnection();
 
-    try {
-      const orderId = Number.parseInt(req.params.orderId, 10);
-      const { status } = req.body;
+// ============================================================
+// FR13 - ADMIN ORDER STATUS UPDATE
+// Supports both PUT and PATCH endpoints for compatibility.
+// ============================================================
 
-      // Validate order ID
-      if (!Number.isInteger(orderId) || orderId <= 0) {
-        return res.status(400).json({
-          success: false,
-          message: "Order ID must be a positive integer"
-        });
-      }
+async function updateOrderStatus(req, res) {
+  const connection = await pool.getConnection();
 
-      // Validate requested status
-      const validStatuses = [
-        "pending",
-        "confirmed",
-        "completed",
-        "cancelled"
-      ];
+  try {
+    const orderId = Number.parseInt(req.params.orderId, 10);
+    const { status } = req.body;
 
-      if (!validStatuses.includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "Status must be one of: pending, confirmed, completed, cancelled"
-        });
-      }
+    // Validate order ID
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Order ID must be a positive integer",
+      });
+    }
 
-      await connection.beginTransaction();
+    // Valid order statuses
+    const validStatuses = [
+      "pending",
+      "confirmed",
+      "completed",
+      "cancelled",
+    ];
 
-      // Retrieve the current order status
-      const [orders] = await connection.query(
-        `
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Status must be one of: pending, confirmed, completed, cancelled",
+      });
+    }
+
+    await connection.beginTransaction();
+
+    // Retrieve the current order status and lock the order row.
+    const [existingOrders] = await connection.query(
+      `
         SELECT
           order_id,
+          user_id,
           status
         FROM orders
         WHERE order_id = ?
         LIMIT 1
-        `,
-        [orderId]
-      );
+        FOR UPDATE
+      `,
+      [orderId]
+    );
 
-      if (orders.length === 0) {
-        await connection.rollback();
+    if (existingOrders.length === 0) {
+      await connection.rollback();
 
-        return res.status(404).json({
-          success: false,
-          message: "Order not found"
-        });
-      }
+      return res.status(404).json({
+        success: false,
+        message: "Order not found",
+      });
+    }
 
-      const currentStatus = orders[0].status;
+    const currentStatus = existingOrders[0].status;
 
-      // Do not process an unchanged status
-      if (currentStatus === status) {
-        await connection.rollback();
+    // Do not process an unchanged status.
+    if (currentStatus === status) {
+      await connection.rollback();
 
-        return res.status(200).json({
-          success: true,
-          message: "Order status is already set to the requested value",
-          data: {
-            order_id: orderId,
-            status: currentStatus
-          }
-        });
-      }
+      return res.status(200).json({
+        success: true,
+        message: "Order status is already set to the requested value",
+        data: {
+          order_id: orderId,
+          previous_status: currentStatus,
+          status: currentStatus,
+          stock_restored: false,
+        },
+      });
+    }
 
-      // Prevent cancelled orders from being reopened
-      if (currentStatus === "cancelled") {
-        await connection.rollback();
+    // Prevent cancelled orders from being reopened.
+    if (currentStatus === "cancelled") {
+      await connection.rollback();
 
-        return res.status(400).json({
-          success: false,
-          message: "Cancelled orders cannot be reopened"
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        message: "Cancelled orders cannot be reopened",
+      });
+    }
 
-      // If administrator cancels the order, restore stock
-      if (status === "cancelled") {
-        const [items] = await connection.query(
-          `
+    // If administrator cancels the order, restore stock.
+    if (status === "cancelled") {
+      const [items] = await connection.query(
+        `
           SELECT
             product_id,
             quantity
           FROM order_items
           WHERE order_id = ?
-          `,
-          [orderId]
-        );
+        `,
+        [orderId]
+      );
 
-        for (const item of items) {
-          await connection.query(
-            `
+      for (const item of items) {
+        await connection.query(
+          `
             UPDATE products
             SET stock = stock + ?
             WHERE product_id = ?
-            `,
-            [item.quantity, item.product_id]
-          );
-        }
+          `,
+          [item.quantity, item.product_id]
+        );
       }
+    }
 
-      // Update the order status
-      await connection.query(
-        `
+    // Update the order status.
+    await connection.query(
+      `
         UPDATE orders
         SET status = ?
         WHERE order_id = ?
-        `,
-        [status, orderId]
-      );
+      `,
+      [status, orderId]
+    );
 
-      await connection.commit();
+    // Retrieve the updated order with customer information.
+    const [updatedOrders] = await connection.query(
+      `
+        SELECT
+          o.order_id,
+          o.user_id,
+          u.full_name,
+          u.email,
+          o.order_date,
+          o.status,
+          o.total_amount
+        FROM orders o
+        INNER JOIN users u
+          ON o.user_id = u.user_id
+        WHERE o.order_id = ?
+        LIMIT 1
+      `,
+      [orderId]
+    );
 
-      res.status(200).json({
-        success: true,
-        message: "Order status updated successfully",
-        data: {
-          order_id: orderId,
-          previous_status: currentStatus,
-          status,
-          stock_restored: status === "cancelled"
-        }
-      });
-    } catch (error) {
-      await connection.rollback();
+    await connection.commit();
 
-      console.error("Admin order status update error:", error.message);
+    const updatedOrder = updatedOrders[0];
 
-      res.status(500).json({
-        success: false,
-        message: "Failed to update order status"
-      });
-    } finally {
-      connection.release();
-    }
+    return res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      data: {
+        order_id: updatedOrder.order_id,
+        user_id: updatedOrder.user_id,
+        customer_name: updatedOrder.full_name,
+        customer_email: updatedOrder.email,
+        order_date: updatedOrder.order_date,
+        previous_status: currentStatus,
+        status: updatedOrder.status,
+        total_amount: Number(updatedOrder.total_amount),
+        stock_restored: status === "cancelled",
+      },
+    });
+  } catch (error) {
+    await connection.rollback();
+
+    console.error("Admin order status update error:", error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update order status",
+    });
+  } finally {
+    connection.release();
   }
+});
+
+// PUT /api/orders/:orderId/status
+// Backward-compatible admin endpoint.
+router.put(
+  "/:orderId/status",
+  authenticateToken,
+  requireAdmin,
+  updateOrderStatus
 );
+
+// PATCH /api/orders/admin/:orderId/status
+// FR13 admin order status endpoint.
+router.patch(
+  "/admin/:orderId/status",
+  authenticateToken,
+  requireAdmin,
+  updateOrderStatus
+);
+
+// ============================================================
 // GET /api/orders/:orderId
 // Retrieve one order belonging to the authenticated customer
+// ============================================================
+
 router.get("/:orderId", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -455,23 +518,23 @@ router.get("/:orderId", authenticateToken, async (req, res) => {
     if (!Number.isInteger(orderId) || orderId <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Order ID must be a positive integer"
+        message: "Order ID must be a positive integer",
       });
     }
 
     // Retrieve order
     const [orders] = await pool.query(
       `
-      SELECT
-        order_id,
-        user_id,
-        order_date,
-        status,
-        total_amount
-      FROM orders
-      WHERE order_id = ?
-        AND user_id = ?
-      LIMIT 1
+        SELECT
+          order_id,
+          user_id,
+          order_date,
+          status,
+          total_amount
+        FROM orders
+        WHERE order_id = ?
+          AND user_id = ?
+        LIMIT 1
       `,
       [orderId, userId]
     );
@@ -479,7 +542,7 @@ router.get("/:orderId", authenticateToken, async (req, res) => {
     if (orders.length === 0) {
       return res.status(404).json({
         success: false,
-        message: "Order not found"
+        message: "Order not found",
       });
     }
 
@@ -488,18 +551,18 @@ router.get("/:orderId", authenticateToken, async (req, res) => {
     // Retrieve order items
     const [items] = await pool.query(
       `
-      SELECT
-        oi.order_item_id,
-        oi.product_id,
-        p.name,
-        oi.quantity,
-        oi.unit_price,
-        oi.subtotal
-      FROM order_items oi
-      INNER JOIN products p
-        ON oi.product_id = p.product_id
-      WHERE oi.order_id = ?
-      ORDER BY oi.order_item_id ASC
+        SELECT
+          oi.order_item_id,
+          oi.product_id,
+          p.name,
+          oi.quantity,
+          oi.unit_price,
+          oi.subtotal
+        FROM order_items oi
+        INNER JOIN products p
+          ON oi.product_id = p.product_id
+        WHERE oi.order_id = ?
+        ORDER BY oi.order_item_id ASC
       `,
       [orderId]
     );
@@ -519,21 +582,25 @@ router.get("/:orderId", authenticateToken, async (req, res) => {
           name: item.name,
           quantity: item.quantity,
           unit_price: Number(item.unit_price),
-          subtotal: Number(item.subtotal)
-        }))
-      }
+          subtotal: Number(item.subtotal),
+        })),
+      },
     });
   } catch (error) {
     console.error("Get order error:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Failed to retrieve order"
+      message: "Failed to retrieve order",
     });
   }
 });
+
+// ============================================================
 // PUT /api/orders/:orderId/cancel
 // Cancel an order belonging to the authenticated customer
+// ============================================================
+
 router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
   const connection = await pool.getConnection();
 
@@ -545,7 +612,7 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
     if (!Number.isInteger(orderId) || orderId <= 0) {
       return res.status(400).json({
         success: false,
-        message: "Order ID must be a positive integer"
+        message: "Order ID must be a positive integer",
       });
     }
 
@@ -554,15 +621,15 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
     // Find the customer's order
     const [orders] = await connection.query(
       `
-      SELECT
-        order_id,
-        user_id,
-        status,
-        total_amount
-      FROM orders
-      WHERE order_id = ?
-        AND user_id = ?
-      LIMIT 1
+        SELECT
+          order_id,
+          user_id,
+          status,
+          total_amount
+        FROM orders
+        WHERE order_id = ?
+          AND user_id = ?
+        LIMIT 1
       `,
       [orderId, userId]
     );
@@ -572,7 +639,7 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
 
       return res.status(404).json({
         success: false,
-        message: "Order not found"
+        message: "Order not found",
       });
     }
 
@@ -584,18 +651,18 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
 
       return res.status(400).json({
         success: false,
-        message: `Order cannot be cancelled because its current status is '${order.status}'`
+        message: `Order cannot be cancelled because its current status is '${order.status}'`,
       });
     }
 
     // Retrieve ordered products and quantities
     const [items] = await connection.query(
       `
-      SELECT
-        product_id,
-        quantity
-      FROM order_items
-      WHERE order_id = ?
+        SELECT
+          product_id,
+          quantity
+        FROM order_items
+        WHERE order_id = ?
       `,
       [orderId]
     );
@@ -604,9 +671,9 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
     for (const item of items) {
       await connection.query(
         `
-        UPDATE products
-        SET stock = stock + ?
-        WHERE product_id = ?
+          UPDATE products
+          SET stock = stock + ?
+          WHERE product_id = ?
         `,
         [item.quantity, item.product_id]
       );
@@ -615,10 +682,10 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
     // Update order status
     await connection.query(
       `
-      UPDATE orders
-      SET status = 'cancelled'
-      WHERE order_id = ?
-        AND user_id = ?
+        UPDATE orders
+        SET status = 'cancelled'
+        WHERE order_id = ?
+          AND user_id = ?
       `,
       [orderId, userId]
     );
@@ -631,8 +698,8 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
       data: {
         order_id: orderId,
         status: "cancelled",
-        stock_restored: true
-      }
+        stock_restored: true,
+      },
     });
   } catch (error) {
     await connection.rollback();
@@ -641,10 +708,11 @@ router.put("/:orderId/cancel", authenticateToken, async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Failed to cancel order"
+      message: "Failed to cancel order",
     });
   } finally {
     connection.release();
   }
 });
+
 module.exports = router;
