@@ -296,6 +296,154 @@ router.get(
     }
   }
 );
+// PUT /api/orders/:orderId/status
+// Update an order status by an administrator
+router.put(
+  "/:orderId/status",
+  authenticateToken,
+  requireAdmin,
+  async (req, res) => {
+    const connection = await pool.getConnection();
+
+    try {
+      const orderId = Number.parseInt(req.params.orderId, 10);
+      const { status } = req.body;
+
+      // Validate order ID
+      if (!Number.isInteger(orderId) || orderId <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Order ID must be a positive integer"
+        });
+      }
+
+      // Validate requested status
+      const validStatuses = [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled"
+      ];
+
+      if (!validStatuses.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Status must be one of: pending, confirmed, completed, cancelled"
+        });
+      }
+
+      await connection.beginTransaction();
+
+      // Retrieve the current order status
+      const [orders] = await connection.query(
+        `
+        SELECT
+          order_id,
+          status
+        FROM orders
+        WHERE order_id = ?
+        LIMIT 1
+        `,
+        [orderId]
+      );
+
+      if (orders.length === 0) {
+        await connection.rollback();
+
+        return res.status(404).json({
+          success: false,
+          message: "Order not found"
+        });
+      }
+
+      const currentStatus = orders[0].status;
+
+      // Do not process an unchanged status
+      if (currentStatus === status) {
+        await connection.rollback();
+
+        return res.status(200).json({
+          success: true,
+          message: "Order status is already set to the requested value",
+          data: {
+            order_id: orderId,
+            status: currentStatus
+          }
+        });
+      }
+
+      // Prevent cancelled orders from being reopened
+      if (currentStatus === "cancelled") {
+        await connection.rollback();
+
+        return res.status(400).json({
+          success: false,
+          message: "Cancelled orders cannot be reopened"
+        });
+      }
+
+      // If administrator cancels the order, restore stock
+      if (status === "cancelled") {
+        const [items] = await connection.query(
+          `
+          SELECT
+            product_id,
+            quantity
+          FROM order_items
+          WHERE order_id = ?
+          `,
+          [orderId]
+        );
+
+        for (const item of items) {
+          await connection.query(
+            `
+            UPDATE products
+            SET stock = stock + ?
+            WHERE product_id = ?
+            `,
+            [item.quantity, item.product_id]
+          );
+        }
+      }
+
+      // Update the order status
+      await connection.query(
+        `
+        UPDATE orders
+        SET status = ?
+        WHERE order_id = ?
+        `,
+        [status, orderId]
+      );
+
+      await connection.commit();
+
+      res.status(200).json({
+        success: true,
+        message: "Order status updated successfully",
+        data: {
+          order_id: orderId,
+          previous_status: currentStatus,
+          status,
+          stock_restored: status === "cancelled"
+        }
+      });
+    } catch (error) {
+      await connection.rollback();
+
+      console.error("Admin order status update error:", error.message);
+
+      res.status(500).json({
+        success: false,
+        message: "Failed to update order status"
+      });
+    } finally {
+      connection.release();
+    }
+  }
+);
 // GET /api/orders/:orderId
 // Retrieve one order belonging to the authenticated customer
 router.get("/:orderId", authenticateToken, async (req, res) => {
