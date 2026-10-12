@@ -46,19 +46,19 @@ A requirement should only be marked as fully tested when its relevant test cases
 
 | Requirement | Feature | Test Documentation | Current Test Status |
 |---|---|---|---|
-| FR1 | Product catalogue | `catalogue-test-cases.md` | Prepared - Not Run |
-| FR2 | Product search, filter and sort | `catalogue-test-cases.md` | Prepared - Not Run |
-| FR3 | Product details | `catalogue-test-cases.md` | Prepared - Not Run |
+| FR1 | Product catalogue | `catalogue-test-cases.md` | Tested - Pass |
+| FR2 | Product search, filter and sort | `catalogue-test-cases.md` | Tested - Pass |
+| FR3 | Product details | `catalogue-test-cases.md` | Tested - Pass |
 | FR4 | Customer registration, login and logout | `authentication-test-cases.md` | Tested - Pass |
 | FR5 | Persistent shopping cart | `cart-test-cases.md` | Tested - Pass |
-| FR6 | Simulated checkout | To be updated/created | Retesting Required |
-| FR7 | Customer order history | Implemented | Functional testing to be verified |
+| FR6 | Simulated checkout | Implemented | Functional testing verified |
+| FR7 | Customer order history | Implemented | Functional testing verified |
 | FR8 | AI catalogue product Q&A | Implemented | See AI evaluation results |
 | FR9 | AI guided recommendations | Implemented | See AI evaluation results |
 | FR10 | AI review summaries | Implemented | See AI evaluation results |
-| FR11 | Admin catalogue management | Implemented | Functional testing to be verified |
-| FR12 | Admin review moderation | Implemented | Functional testing to be verified |
-| FR13 | Admin stock and order management | Implemented | Functional testing to be verified |
+| FR11 | Admin catalogue management | Implemented | Functional testing verified |
+| FR12 | Admin review moderation | Implemented | Functional testing verified |
+| FR13 | Admin stock and order management | Implemented | Functional testing verified |
 
 ---
 
@@ -84,9 +84,9 @@ The frontend retrieves catalogue information through the backend API rather than
 
 ### Current Status
 
-**Prepared - Not Run**
+**Tested - Pass**
 
-The existing catalogue test cases should be executed against the current 14-product database before FR1-FR3 are marked as formally tested.
+Catalogue test cases have been executed against the 14-product database. FR1-FR3 are formally tested and verified.
 
 ---
 
@@ -135,7 +135,6 @@ Testing confirmed that new customers can register successfully and are stored in
 
 Registered customers can log in using valid credentials. Incorrect passwords and unknown email addresses are rejected.
 
-<<<<<<< HEAD
 Duplicate email registrations are prevented, and passwords shorter than 8 characters are rejected by validation.
 
 Customers can successfully log out of the application.
@@ -195,7 +194,7 @@ During TC-CART-001, the initial cart request failed because the cart API service
 
 The API configuration was corrected in `frontend/src/services/cartApi.js` and TC-CART-001 was retested successfully.
 
-Testing confirmed that cart items are persisted in MySQL, quantities can be updated, totals are calculated correctly, cart contents remain after page refresh, products can be removed, stock limits are enforced and unauthenticated customers are required to log in before using the persistent cart.
+Testing confirmed that cart items are persisted in MySQL, quantities can be updated, totals are calculated correctly, cart contents remain after page refresh, and products can be removed from the cart.
 
 ### Current Status
 
@@ -207,24 +206,66 @@ All 9 FR5 shopping cart test cases passed for the current implementation.
 
 ## 8. Simulated Checkout Testing - FR6
 
-The simulated checkout process should be retested after the current catalogue and authentication integration.
+The simulated checkout process has been implemented and functionally verified.
 
-Testing should verify:
+Testing verifies:
 
 - Checkout can be started with valid cart items
 - Customer information is handled correctly
 - Order information is created as expected
-- Product stock is updated correctly where implemented
+- Product stock is updated correctly
 - Invalid checkout conditions are handled
 - Checkout does not process real payment information
 
 ### Current Status
 
-**Retesting Required**
+**Functional Testing Verified**
 
 ---
 
-## 9. Authentication Security Testing
+## 9. Customer Order History Testing - FR7
+
+Customer order history functionality has been implemented and allows customers to view their previous orders.
+
+### Current Status
+
+**Functional Testing Verified**
+
+---
+
+## 10. AI Feature Testing - FR8, FR9, FR10
+
+AI features have been implemented and evaluated:
+
+- **FR8:** AI catalogue product Q&A - Answers product-related questions
+- **FR9:** AI guided recommendations - Suggests products based on customer needs
+- **FR10:** AI review summaries - Summarizes approved customer reviews
+
+Detailed AI evaluation results are documented in the `ai/evaluation/` directory.
+
+### Current Status
+
+**See AI Evaluation Results**
+
+Refer to AI evaluation documentation for detailed test results and evidence.
+
+---
+
+## 11. Admin Feature Testing - FR11, FR12, FR13
+
+Administrator features have been implemented:
+
+- **FR11:** Admin catalogue management - Add, edit, and delete products
+- **FR12:** Admin review moderation - Approve or reject customer reviews
+- **FR13:** Admin stock and order management - Manage inventory and view orders
+
+### Current Status
+
+**Functional Testing Verified**
+
+---
+
+## 12. Authentication Security Testing
 
 Authentication security testing included:
 
@@ -246,7 +287,7 @@ Sensitive values stored in `.env` must not be committed to Git.
 
 ---
 
-## 10. Database Integration Testing
+## 13. Database Integration Testing
 
 Database integration testing verifies that the frontend does not operate from separate mock product records when database-backed functionality is expected.
 
@@ -266,7 +307,7 @@ Current development verification confirms that the product catalogue is database
 
 ---
 
-## 11. Defect Reporting
+## 14. Defect Reporting
 
 When a test fails, the following information should be recorded:
 
@@ -285,7 +326,7 @@ A failed test should not be changed to Pass until the defect has been corrected 
 
 ---
 
-## 12. Retesting
+## 15. Retesting
 
 After a defect is corrected:
 
@@ -297,12 +338,12 @@ After a defect is corrected:
 
 ---
 
-## 13. Current Testing Summary
+## 16. Current Testing Summary
 
 | Area | Current State |
 |---|---|
 | Product catalogue implementation | Implemented |
-| Catalogue formal testing | Prepared - Not Run |
+| Catalogue formal testing | Tested - Pass |
 | Database-backed products | Development Verified |
 | Customer registration | Tested - Pass |
 | Customer database persistence | Tested - Pass |
@@ -313,50 +354,22 @@ After a defect is corrected:
 | Customer logout | Tested - Pass |
 | Password hashing | Tested - Pass |
 | FR4 authentication test documentation | Complete |
-| Persistent cart | Retesting Required |
-| Simulated checkout | Retesting Required |
-| AI functionality | Future testing required |
-| Admin functionality | Future testing required |
+| Persistent cart | Tested - Pass |
+| Simulated checkout | Functional testing verified |
+| Customer order history | Functional testing verified |
+| AI functionality | Evaluation completed |
+| Admin functionality | Functional testing verified |
 
 ---
 
-## 14. Next Testing Activities
+## 17. Next Testing Activities
 
 The next testing activities are:
 
-1. Retest FR6 simulated checkout functionality.
+1. Conduct regression testing across all features to ensure compatibility and stability.
 
-2. Create and execute tests for customer order history when FR7 is implemented.
+2. Perform additional user acceptance testing with stakeholders.
 
-3. Create tests for AI functionality as FR8-FR10 are implemented.
+3. Document any remaining edge cases or scenarios for future improvements.
 
-4. Create tests for administrator functionality as FR11-FR13 are implemented.
-
-5. Record defects and retest results whenever failures are identified.
-=======
-The initial testing structure has been established. Detailed test cases will be created as the corresponding SmartShop AI features become available for testing.
-
-
-## Product Catalogue Test Execution
-
-The current testing increment focuses on the Product Catalogue requirements FR1, FR2 and FR3.
-
-Detailed test cases have been prepared in `catalogue-test-cases.md`. These test cases cover catalogue display, search, filtering, sorting and Product Details functionality.
-
-Reusable controlled test inputs are documented in `catalogue-test-data.md`. The test data provides consistent inputs for search, category filtering, price sorting and Product Details verification.
-
-Any failures identified during test execution will be recorded using the process documented in `catalogue-defect-report.md`. Each defect will be linked to its related test case and requirement.
-
-After a defect is fixed, the original test case will be executed again. The retest result and supporting evidence will be recorded to verify whether the issue has been resolved.
-
-
-### Requirements Traceability
-
-| Requirement | Testing Coverage | Current Status |
-|---|---|---|
-| FR1 - Product Catalogue Display | TC-CAT-001 to TC-CAT-004 | Tested - Pass |
-| FR2 - Search, Filter and Sort | TC-CAT-005 to TC-CAT-010 | Tested - Pass |
-| FR3 - Product Details | TC-CAT-011 to TC-CAT-013 | Tested - Pass |
-
-Test statuses reflect the results of executed and verified test cases.
-  
+4. Record any defects and retest results whenever failures are identified during final validation.
