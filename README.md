@@ -104,8 +104,7 @@ USE smartshop_ai;
 
 Import the final database dump from:
 
-`database/smartshop_ai_final_dump.sql`
-
+database/smartshop_ai_databse.sql
 Using MySQL Workbench:
 
 1. Select **Server → Data Import**.
