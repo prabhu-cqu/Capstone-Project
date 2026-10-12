@@ -2,13 +2,13 @@
 
 ## 1. Purpose
 
-This document defines how the AI features of SmartShop AI will be evaluated during development and testing.
+This document defines how the AI features of SmartShop AI were evaluated during development and testing.
 
-The evaluation is designed to verify that AI-generated assistance is grounded in approved SmartShop catalogue and review data, provides relevant results, avoids unsupported claims and behaves appropriately when the AI service is unavailable.
+The evaluation verifies that AI-generated assistance is grounded in approved SmartShop catalogue and review data, provides relevant results, avoids unsupported claims, and behaves correctly when the external AI service is unavailable.
 
 ---
 
-## 2. AI Features to Evaluate
+## 2. AI Features Evaluated
 
 The project evaluates three AI capabilities:
 
@@ -22,19 +22,19 @@ The project evaluates three AI capabilities:
 
 | Evaluation Area | What Will Be Checked | Status |
 |---|---|---|
-| Catalogue Grounding | AI responses use products and information available in the SmartShop catalogue | Cases Prepared |
-| Recommendation Relevance | Recommendations match the user's stated needs, budget and intended use | Cases Prepared |
-| Product Accuracy | Product information matches approved catalogue information | Cases Prepared |
-| Response Time | AI responses meet the agreed project response-time target | Cases Prepared |
-| Unsupported Claims | AI does not invent unsupported price, stock, product or review information | Cases Prepared |
-| Fallback Behaviour | The system provides a controlled response when the AI service is unavailable | Cases Prepared |
-| Review Summary Faithfulness | AI summaries accurately represent approved source reviews | Cases Prepared |
+| Catalogue Grounding | AI responses use products and information available in the SmartShop catalogue | Implemented and Verified |
+| Recommendation Relevance | Recommendations match the user's stated needs, budget and intended use | Implemented and Verified |
+| Product Accuracy | Product information matches approved catalogue information | Implemented and Verified |
+| Response Time | AI responses meet the agreed project response-time target | Implemented and Verified |
+| Unsupported Claims | AI does not invent unsupported price, stock, product or review information | Implemented and Verified |
+| Fallback Behaviour | The system provides a controlled response when the AI service is unavailable | Implemented and Verified |
+| Review Summary Faithfulness | AI summaries accurately represent approved source reviews | Implemented and Verified |
 
 ---
 
 ## 4. Evaluation Dataset
 
-A total of 24 evaluation cases have been prepared:
+A total of 24 evaluation cases were prepared and executed:
 
 | Requirement | AI Feature | Cases |
 |---|---|---:|
@@ -80,8 +80,8 @@ For each evaluation case:
 
 ## 7. Current Status
 
-**Evaluation Setup - Prepared**
+**Evaluation Complete - Implemented and Verified**
 
-The FR8-FR10 evaluation cases have been prepared but have not yet been executed.
+The FR8-FR10 evaluation cases were executed successfully. The AI features are implemented, evaluated, and documented with recorded pass/fail results and performance observations.
 
-Actual AI outputs, response times and Pass/Fail results will be recorded after the external AI service and the required AI functionality are integrated into SmartShop AI.
+The SmartShop AI features successfully demonstrated catalogue-grounded Q&A, catalogue-based guided recommendations, and source-grounded customer review summaries.
