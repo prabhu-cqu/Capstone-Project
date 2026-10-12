@@ -52,13 +52,13 @@ A requirement should only be marked as fully tested when its relevant test cases
 | FR4 | Customer registration, login and logout | `authentication-test-cases.md` | Tested - Pass |
 | FR5 | Persistent shopping cart | `cart-test-cases.md` | Tested - Pass |
 | FR6 | Simulated checkout | To be updated/created | Retesting Required |
-| FR7 | Customer order history | To be created | Not Implemented |
-| FR8 | AI catalogue product Q&A | To be created | Not Implemented |
-| FR9 | AI guided recommendations | To be created | Not Implemented |
-| FR10 | AI review summaries | To be created | Not Implemented |
-| FR11 | Admin catalogue management | To be created | Not Implemented |
-| FR12 | Admin review moderation | To be created | Not Implemented |
-| FR13 | Admin stock and order management | To be created | Not Implemented |
+| FR7 | Customer order history | Implemented | Functional testing to be verified |
+| FR8 | AI catalogue product Q&A | Implemented | See AI evaluation results |
+| FR9 | AI guided recommendations | Implemented | See AI evaluation results |
+| FR10 | AI review summaries | Implemented | See AI evaluation results |
+| FR11 | Admin catalogue management | Implemented | Functional testing to be verified |
+| FR12 | Admin review moderation | Implemented | Functional testing to be verified |
+| FR13 | Admin stock and order management | Implemented | Functional testing to be verified |
 
 ---
 
@@ -349,13 +349,14 @@ Any failures identified during test execution will be recorded using the process
 
 After a defect is fixed, the original test case will be executed again. The retest result and supporting evidence will be recorded to verify whether the issue has been resolved.
 
+
 ### Requirements Traceability
 
 | Requirement | Testing Coverage | Current Status |
 |---|---|---|
-| FR1 - Product Catalogue Display | TC-CAT-001 to TC-CAT-004 | Prepared - Not Run |
-| FR2 - Search, Filter and Sort | TC-CAT-005 to TC-CAT-010 | Prepared - Not Run |
-| FR3 - Product Details | TC-CAT-011 to TC-CAT-013 | Prepared - Not Run |
+| FR1 - Product Catalogue Display | TC-CAT-001 to TC-CAT-004 | Tested - Pass |
+| FR2 - Search, Filter and Sort | TC-CAT-005 to TC-CAT-010 | Tested - Pass |
+| FR3 - Product Details | TC-CAT-011 to TC-CAT-013 | Tested - Pass |
 
-Test statuses will only be changed after the corresponding functionality has been executed and verified.
->>>>>>> origin/main
+Test statuses reflect the results of executed and verified test cases.
+  
