@@ -110,14 +110,14 @@ Using MySQL Workbench:
 
 1. Select **Server → Data Import**.
 2. Choose **Import from Self-Contained File**.
-3. Select `smartshop_ai_final_dump.sql`.
+3. Select `smartshop_ai_databse.sql`.
 4. Select `smartshop_ai` as the target schema.
 5. Click **Start Import**.
 
 Alternatively, use the MySQL command line:
 
 ```bash
-mysql -u root -p smartshop_ai < database/smartshop_ai_final_dump.sql
+mysql -u root -p smartshop_ai < database/smartshop_ai_databse.sql
 ```
 
 Run the command from the project root folder.
